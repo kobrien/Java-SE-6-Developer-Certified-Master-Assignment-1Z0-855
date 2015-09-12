@@ -31,8 +31,6 @@ public class Data implements IDatabase {
 
     private final Cache cache;
 
-    // private final DBFileManager dbFileManager;
-
     /**
      * Constructor takes the absolute path to the database file. This path
      * should be read from the suncertify.properties file which is populated by
@@ -80,8 +78,12 @@ public class Data implements IDatabase {
     }
 
     /**
-     * Modifies the fields of a subcontractor record and updates the record in
-     * cache. The new values for field n appears in data[n].
+     * Modifies the fields of an existing subcontractor record in cache. The new
+     * values for field n appears in data[n]. NOTE: If an update is made to the
+     * name and/or location (data[0] and/or data [1]) the existing record number
+     * will no longer be valid and so to avoid duplicates this subcontractor
+     * will be removed from cache and the new record number and corresponding
+     * contractor will be added to cache
      *
      * @param recNo
      *            - The record number to update
@@ -105,7 +107,17 @@ public class Data implements IDatabase {
 	// that they are correct number etc.
 	subcontractor.update(data);
 
-	cache.setSubcontractor(recNo, subcontractor);
+	// Check if the record number was changed i.e. if name and/or location
+	// fields were updated
+	if (recNo != subcontractor.hashCode()) {
+	    // if so remove the old record number from cache as this is no
+	    // longer valid
+	    cache.removeSubcontractor(recNo);
+	}
+
+	// Update the fields of the existing subcontractor or create a new one
+	// if the record number has changed above
+	cache.addSubcontractor(recNo, subcontractor);
 
     }
 
@@ -171,7 +183,7 @@ public class Data implements IDatabase {
      */
     @Override
     public void lock(final int recNo) throws RecordNotFoundException {
-	LockManager.lockRecord(recNo, this);
+	LockManager2.lockRecord(recNo, this);
     }
 
     /**
@@ -183,7 +195,7 @@ public class Data implements IDatabase {
      */
     @Override
     public void unlock(final int recNo) throws RecordNotFoundException {
-	LockManager.unlockRecord(recNo, this);
+	LockManager2.unlockRecord(recNo, this);
 
     }
 
@@ -198,18 +210,18 @@ public class Data implements IDatabase {
      */
     @Override
     public boolean isLocked(final int recNo) throws RecordNotFoundException {
-	return LockManager.isRecordLocked(recNo);
+	return LockManager2.isRecordLocked(recNo);
     }
 
     /**
-     * Saves the contents of cache to disk. This method should be called when
-     * the application terminates, either normally or abnormally
+     * Saves the contents of the cache back to disk. This method should be
+     * called when the application terminates, either normally or abnormally
      *
      * @throws DatabaseException
      */
     @Override
     public void saveData() throws DatabaseException {
-	// TODO
+	DBFileReader.persistAllSubcontractors(cache.getCachedSubcontractors());
     }
 
 }

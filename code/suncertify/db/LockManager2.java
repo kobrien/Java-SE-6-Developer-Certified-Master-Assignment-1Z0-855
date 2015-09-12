@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * @author Kieran O'Brien
  *
  */
-public class LockManager {
+public class LockManager2 {
     private final static Logger LOGGER = Logger.getLogger(LockManager.class
 	    .getName());
 
@@ -54,24 +54,22 @@ public class LockManager {
      * @param client
      *            The client thread that is obtaining the lock on the record
      */
-    synchronized static void lockRecord(final int recNo, final Data client) {
-	// TODO use lock or synchonized?
-	// lock.lock();
-	// try {
-	while (lockedRecords.containsKey(recNo)) {
-	    try {
+    static void lockRecord(final int recNo, final Data client) {
+	lock.lock();
+	try {
+	    while (lockedRecords.containsKey(recNo)) {
+
 		// Wait until the record lock is released by another thread
 		lockReleased.await();
-	    } catch (final InterruptedException e) {
-		// TODO what to do here?
-		e.printStackTrace();
-	    }
-	}
 
-	lockedRecords.put(recNo, client);
-	// } finally {
-	// lock.unlock();
-	// }
+	    }
+
+	    lockedRecords.put(recNo, client);
+	} catch (final InterruptedException e) {
+	    e.printStackTrace();
+	} finally {
+	    lock.unlock();
+	}
     }
 
     /**
@@ -84,21 +82,21 @@ public class LockManager {
      *            The client thread that is releasing the lock on the record
      *
      */
-    synchronized static void unlockRecord(final int recNo, final Data client) {
-	// lock.lock();
-	// try {
-	// Return if the record is already unlocked
-	if (lockedRecords.containsKey(recNo)) {
-	    // Make sure the locked record belongs to this client thread
-	    // and if so unlock it and signal to other threads
-	    if (lockedRecords.get(recNo) == client) {
-		lockedRecords.remove(recNo);
-		lockReleased.signal();
+    static void unlockRecord(final int recNo, final Data client) {
+	lock.lock();
+	try {
+	    // Return if the record is already unlocked
+	    if (lockedRecords.containsKey(recNo)) {
+		// Make sure the locked record belongs to this client thread
+		// and if so unlock it and signal to other threads
+		if (lockedRecords.get(recNo) == client) {
+		    lockedRecords.remove(recNo);
+		    lockReleased.signal();
+		}
 	    }
+	} finally {
+	    lock.unlock();
 	}
-	// } finally {
-	// lock.unlock();
-	// }
     }
 
     /**
@@ -109,7 +107,7 @@ public class LockManager {
      *            The record number to check
      * @return True if record is locked by another client thread otherwise False
      */
-    synchronized static boolean isRecordLocked(final int recNo) {
+    static boolean isRecordLocked(final int recNo) {
 	return lockedRecords.containsKey(recNo);
     }
 

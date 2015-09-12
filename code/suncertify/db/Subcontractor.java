@@ -146,11 +146,13 @@ public class Subcontractor implements Serializable {
      * Updates each subcontractor field n with the data in fields[n]. Throws an
      * IllegalArgumentException if any of the data values are invalid
      *
+     *
      * @param fields
      */
     public void update(final String[] fields) {
 	if (fields == null || fields.length < this.toArray().length) {
-	    throw new IllegalArgumentException();
+	    throw new IllegalArgumentException(
+		    "Invalid data fields for Subcontractor");
 	}
 	this.setName(fields[0]);
 	this.setLocation(fields[1]);

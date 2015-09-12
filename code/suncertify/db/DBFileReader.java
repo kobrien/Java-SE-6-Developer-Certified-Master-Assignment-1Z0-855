@@ -49,6 +49,7 @@ public class DBFileReader {
 	    try {
 		LOGGER.info("Creating connection to database file "
 			+ databasePath);
+
 		databaseFile = new RandomAccessFile(databasePath,
 			FILE_ACCESS_MODE);
 
@@ -140,7 +141,9 @@ public class DBFileReader {
 	    NUMBER_FIELDS_PER_RECORD_VALUE = getIntValueFromByteArray(numberFieldsPerRecordValue);
 
 	} catch (final IOException e) {
-	    throw new DatabaseException(e.getMessage());
+	    throw new DatabaseException(
+		    "I/O error occured trying to read database file "
+			    + e.getMessage());
 	}
 
     }
@@ -288,5 +291,14 @@ public class DBFileReader {
 	}
 
 	return value;
+    }
+
+    /**
+     * @param cachedSubcontractors
+     */
+    public static void persistAllSubcontractors(
+	    final List<Subcontractor> cachedSubcontractors) {
+	// TODO Auto-generated method stub
+
     }
 }

@@ -81,7 +81,8 @@ public class Cache {
      * Reads all subcontractor records from the database file using
      * DBFileManager and adds them to the cache. The records are returned from
      * DBFileManager as subcontractor objects. This method only gets called once
-     * when the cache is initialized
+     * when the cache is initialized. The hashcode of the Subcontractor object
+     * (composite of the record name and location) is used as it's record number
      *
      * @throws DatabaseException
      */
@@ -93,26 +94,28 @@ public class Cache {
 	subcontractors = DBFileReader.getAllSubcontractors();
 
 	for (final Subcontractor sub : subcontractors) {
-	    // Get the unique record number of this subcontractor and use this
-	    // for the key in cache
+	    // Get the unique hash code of the subcontractor object and use this
+	    // as the record number key in cache
 	    final int recordNumber = sub.hashCode();
-	    this.setSubcontractor(recordNumber, sub);
+	    this.addSubcontractor(recordNumber, sub);
 	}
 
     }
 
     /**
-     * Adds a subcontractor record to the cache. If the cache already has this
-     * key, the old subcontractor is replaced by the new subcontractor object
+     * Adds a subcontractor record to the cache or if the cache already has this
+     * record number replace the existing fields with the new fields of the
+     * subcontractor object
      *
      * @param recordNo
      *            The unique record number for this subcontractor record
      * @param subcontractor
      *            Subcontractor object
      */
-    public void setSubcontractor(final int recordNo,
+    public void addSubcontractor(final int recordNo,
 	    final Subcontractor subcontractor) {
 	// TODO synchronize on the cache object here or from the Data class?
+	// Lock should be called before calling Data.update
 	synchronized (cachedRecords) {
 	    this.cachedRecords.put(recordNo, subcontractor);
 	}
@@ -128,6 +131,26 @@ public class Cache {
      */
     public Subcontractor getSubcontractor(final int recordNo) {
 	return this.cachedRecords.get(recordNo);
+    }
+
+    /**
+     * Removes a Subcontractor object with the specified record number from the
+     * cache. Not only is this method used when deleting a record but also if an
+     * update is made to the subcontractor's name or location fields as this
+     * will result in a new record number for that subcontractor object
+     *
+     * @param recordNo
+     *            The record number of the Subcontractor
+     * @throws RecordNotFoundException
+     */
+    public void removeSubcontractor(final int recordNo)
+	    throws RecordNotFoundException {
+	if (this.cachedRecords.containsKey(recordNo)) {
+	    this.cachedRecords.remove(recordNo);
+	} else {
+	    throw new RecordNotFoundException(
+		    "No record number found for subcontractor " + recordNo);
+	}
     }
 
     /**
@@ -166,7 +189,7 @@ public class Cache {
 	return results;
     }
 
-    private List<Subcontractor> getCachedSubcontractors() {
+    List<Subcontractor> getCachedSubcontractors() {
 	return new ArrayList<Subcontractor>(this.cachedRecords.values());
     }
 
