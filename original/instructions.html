@@ -1,0 +1,678 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE>Sun Certified Developer for the Java 2 Platform: Application Submission (Version 2.3.2)</TITLE>
+	<META NAME="GENERATOR" CONTENT="Oracle Open Office 3.3  (Win32)">
+	<META NAME="CREATED" CONTENT="0;0">
+	<META NAME="CHANGEDBY" CONTENT="yamuna santhakumari">
+	<META NAME="CHANGED" CONTENT="20110804;14005659">
+	<META NAME="CHANGEDBY" CONTENT="yamuna santhakumari">
+	<STYLE TYPE="text/css">
+	<!--
+		H2.cjk { font-family: "SimSun" }
+		H2.ctl { font-family: "Mangal" }
+		H3.cjk { font-family: "SimSun" }
+		H3.ctl { font-family: "Mangal" }
+		H4.cjk { font-family: "SimSun" }
+		H4.ctl { font-family: "Mangal" }
+		PRE.cjk { font-family: "NSimSun", monospace }
+		TT.cjk { font-family: "NSimSun", monospace }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" DIR="LTR">
+<H1><A NAME="top"></A>Sun Certified Developer for the Java 2
+Platform: Application Submission (Version 2.3.2)</H1>
+<H2 CLASS="western">Introduction and Index</H2>
+<P>This document tells you what you need, and what you must do, to
+submit your solution to the Sun Certified Developer for the Java 2
+Platform programming assignment. Read it carefully before you begin
+work on the solution. This document contains strict guidelines about
+the way the work is to be performed.&nbsp; These guidelines ensure
+consistency and fairness. 
+</P>
+<P>The application distribution is composed of: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">This document 
+	</P>
+	<LI><P>A non-relational database file 
+	</P>
+</UL>
+<P>Be sure to maintain a backup copy of all files related to your
+project, including the distribution files, until you receive your
+certificate in case one or more is corrupted, lost, or becomes
+unusable. You must not use any materials issued to other
+certification candidates even if you believe they are identical. 
+</P>
+<P>This document is divided into the following sections: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#what_this"><B>Application
+	Overview</B></A> - A general description of the application you will
+	write 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#arch"><B>Architecture</B></A>
+	- The parts of the application and how they fit together 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#UI"><B>User Interface</B></A>
+	- GUI specification 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#database"><B>Server</B></A>
+	-&nbsp; The data server and its network connection 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#data"><B>Data file
+	format</B></A> The format and schema of the database file 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#Deliverables"><B>Deliverables</B></A>
+	- The components you must deliver, and how you should package them. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in"><A HREF="#marking"><B>Marking</B></A>
+	- How your assignment will be graded 
+	</P>
+	<LI><P><A HREF="#whattodo"><B>What to do if you have a question</B></A>
+		</P>
+</UL>
+<H3 CLASS="western">Important Note About Automatic Failure</H3>
+<P STYLE="margin-bottom: 0in"><I>Where this document uses the word
+&quot;must&quot; an absolute requirement is being described. If you
+fail to adhere to such a requirement, your assignment will be failed
+automatically, and without further evaluation. It is therefore
+imperative that you pay close attention to any statement using the
+word &quot;must&quot; in this document.&nbsp; Portions of your
+submission will be analyzed by software; where a specific spelling or
+structure is required, even a slight deviation could result in
+automatic failure.&nbsp;</I> 
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="what_this"></A>Application Overview</H2>
+<H3 CLASS="western">Background</H3>
+<P>Bodgitt and Scarper, LLC. is a broker of home improvement
+contractors. They take requests from home owners for a type of
+service, and offer the homeowner one or more contractors that can
+provide the required services. Curently, Bodgitt and Scarper provides
+this service over the phone using a team of customer service
+representatives (CSRs). The CSRs interact with an ageing
+custom-written application that has been drawing increasing criticism
+from the CSRs. In the future, Bodgitt and Scarper wants to move into
+Internet-based marketing, and hopes to be able to provide their
+services directly to customers over the web. 
+</P>
+<P>The company's IT director has decided to migrate the existing
+application to a Java technology based system. Initially, the system
+will support only the CSRs, although the hope is that this interim
+step will give them a starting point for migrating the system to the
+web. The IT director does not anticipate much reuse of the first Java
+technology system, but intends to use that system as a learning
+exercise before going on to a web based system. 
+</P>
+<P>The company's IT department has a data file that contains the
+essential information for the company, but because the data must
+continue to be manipulated for reports using another custom-written
+application, the new system must reimplement the database code from
+scratch without altering the data file format. 
+</P>
+<P>The new application, using the existing data file format, must
+allow the CSRs to generate a list of constractors that match a
+customer's criteria. This is the project that you have been
+commissioned to implement. 
+</P>
+<H3 CLASS="western">What you must do</H3>
+<P>The following are the &quot;top level&quot; features that must be
+implemented: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">A client program with a graphical
+	user interface that connects to the database 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">A data access system that provides
+	record locking and a flexible search mechanism 
+	</P>
+	<LI><P>Network server functionality for the database system 
+	</P>
+</UL>
+<P>The work involves a number of design choices that have to be made.
+In all such cases, the following principles should be applied. 
+</P>
+<H4 CLASS="western">Clarity and Maintainability</H4>
+<DL>
+	<DD STYLE="margin-bottom: 0.2in">A clear design, such as will be
+	readily understood by junior programmers, will be preferred to a
+	complex one, even if the complex one is a little more efficient.
+	Code complexity, including nesting depth, argument passing, and the
+	number of classes and interfaces, should be reasonable. 
+	</DD></DL>
+<H4 CLASS="western">
+Documentation</H4>
+<DL>
+	<DD>The code itself should be as clear as possible; do not provide
+	comments that do not add to the comprehensibility of the code.
+	Awkward or complex code should have descriptive comments, and
+	javadoc style comments must be used for each element of the public
+	interface of each class. You must create a full suite of
+	documentation for the classes of the completed project. This must be
+	generated using the tool &quot;javadoc&quot; and must be in HTML
+	format.&nbsp; Provide javadoc documentation for all classes you
+	write. 
+	</DD><DD STYLE="margin-bottom: 0.2in">
+	You must provide basic user documentation. This should be sufficient
+	to allow a user who is familiar with the broad purpose of the
+	project to use the application. This documentation must be in one of
+	these three formats: 
+	</DD></DL>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">
+	HTML 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">Plain text (not a wordprocessor
+	format) 
+	</P>
+	<LI><P>Within the application as a help system. 
+	</P>
+</UL>
+<H4 CLASS="western">Correctness</H4>
+<DL>
+	<DT STYLE="margin-bottom: 0.2in">Your project must conform to this
+	specification.&nbsp; Features that deviate from specification will
+	not receive full credit.&nbsp; You will not receive extra credit
+	points for work beyond the requirements of the specification. 
+	</DT></DL>
+<H4 CLASS="western">
+Use of Standard Elements</H4>
+<P>Use of functionality provided by the core Java classes will be
+preferred to your own implementation of that functionality, unless
+there is a specific advantage to providing your own implementation.</P>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="arch"></A>Overall Architecture</H2>
+<H3 CLASS="western">Major Components</H3>
+<P>The main architecture of the application must be a traditional
+client-server system. There are three key parts:&nbsp; the
+server-side data management system, the client-side GUI, and the
+network connection between the two. 
+</P>
+<H3 CLASS="western">Non-Networked Mode</H3>
+<P>The program must be able to work in a non-networked mode. In this
+mode, the database and GUI must run in the same VM and must perform
+no networking, must not use loopback networking, and must not involve
+the serialization of any objects when communicating between the GUI
+and database elements. 
+</P>
+<P>The operating mode is selected using the single command line
+argument that is permitted. Architecturally, this mode must use the
+database and GUI from the networked form, but must not use the
+network server code at all. 
+</P>
+<H3 CLASS="western">Network Communication Approach</H3>
+<P>You have a choice regarding the network connection protocol. You
+must use either serialized objects over a simple socket connection,
+or RMI.&nbsp; Both options are equally acceptable.&nbsp; Keep in mind
+that networking must be entirely bypassed in the non-networked mode. 
+</P>
+<H3 CLASS="western">Restrictions on RMI</H3>
+<P STYLE="margin-bottom: 0in">To avoid unnecessary complexity in the
+marking environment certain restrictions are placed on solutions that
+use RMI.&nbsp; Specifically: <BR>&nbsp; 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">&nbsp;You must not require the use
+	of an HTTP server. 
+	</P>
+</UL>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">&nbsp;You must not require the
+	installation of a security manager. 
+	</P>
+</UL>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">&nbsp;You must provide all classes
+	pre-installed so that no dynamic class downloading occurs. 
+	</P>
+</UL>
+<UL>
+	<LI><P>&nbsp;You must use RMI over JRMP (do not use IIOP) 
+	</P>
+</UL>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="UI"></A>The User Interface</H2>
+<P>The user interface for this assignment must satisfy the following
+criteria: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">It must be composed exclusively
+	with components from the Java Foundation Classes (Swing components).
+		</P>
+	<LI><P STYLE="margin-bottom: 0in">It must allow the user to search
+	the data for all records, or for records where the name and/or
+	location fields exactly match values specified by the user. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">It must present search results in
+	a JTable. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">It must allow the user to book a
+	selected record, updating the database file accordingly. 
+	</P>
+	<LI><P>The program must allow the user to specify the location of
+	the database in both standalone and network mode and persist the db
+	configuration details in suncertify.properties file. The application
+	must read the properties file to determine the location of the db
+	and display the data from the db. 
+	</P>
+</UL>
+<P>Your user interface should be designed with the expectation of
+future functionality enhancements, and it should establish a
+framework that will support this with minimal disruption to the users
+when this occurs. 
+</P>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="database"></A>Server</H2>
+<H3 CLASS="western">Required Interface</H3>
+<P>Your data access class must be called &quot;Data.java&quot;, must
+be in a package called &quot;suncertify.db&quot;, and must implement
+the following interface: 
+</P>
+<PRE CLASS="western">package suncertify.db;
+
+
+public interface DBMain {
+  // Reads a record from the file. Returns an array where each
+  // element is a record value.
+  public String [] read(int recNo) throws RecordNotFoundException;
+
+  // Modifies the fields of a record. The new value for field n 
+  // appears in data[n].
+  public void update(int recNo, String [] data)
+    throws RecordNotFoundException;
+
+
+  // Deletes a record, making the record number and associated disk
+  // storage available for reuse. 
+  public void delete(int recNo) throws RecordNotFoundException;
+
+
+  // Returns an array of record numbers that match the specified
+  // criteria. Field n in the database file is described by
+  // criteria[n]. A null value in criteria[n] matches any field
+  // value. A non-null  value in criteria[n] matches any field
+  // value that begins with criteria[n]. (For example, &quot;Fred&quot;
+  // matches &quot;Fred&quot; or &quot;Freddy&quot;.)
+  public int [] find(String [] criteria)
+    throws RecordNotFoundException;
+
+
+  // Creates a new record in the database (possibly reusing a
+  // deleted entry). Inserts the given data, and returns the record
+  // number of the new record.
+  public int create(String [] data) throws DuplicateKeyException;
+
+
+  // Locks a record so that it can only be updated or deleted by this client.
+  // If the specified record is already locked, the current thread gives up
+  // the CPU and consumes no CPU cycles until the record is unlocked.
+  public void lock(int recNo) throws RecordNotFoundException;
+
+
+  // Releases the lock on a record. 
+  public void unlock(int recNo) throws RecordNotFoundException;
+
+
+  // Determines if a record is currenly locked. Returns true if the
+  // record is locked, false otherwise.
+  public boolean isLocked(int recNo)
+    throws RecordNotFoundException;
+}</PRE><P>
+Any unimplemented exceptions in this interface must all be created as
+member classes of the <TT CLASS="western">suncertify.db</TT> package.
+Each must have a zero argument constructor and a second constructor
+that takes a String that serves as the exception's description. 
+</P>
+<P>Any methods that throw RecordNotFoundException should do so if a
+specified record does not exist or is marked as deleted in the
+database file. 
+</P>
+<H3 CLASS="western"><FONT SIZE=3>Network Approaches</FONT></H3>
+<P ALIGN=LEFT STYLE="margin-bottom: 0in"><SPAN STYLE="text-decoration: none"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">Your
+choice of RMI or serialized objects will not affect your grade, but
+no other approach is acceptable. In either case, </SPAN></SPAN></FONT></FONT></SPAN><FONT COLOR="#000000"><SPAN STYLE="text-decoration: none"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">it
+must accept an indication that a local database is to be used, in
+which case, the networking must be bypassed entirely. No
+authentication is required for database access.</SPAN></SPAN></FONT></FONT></SPAN></FONT></P>
+<H3 CLASS="western">Locking</H3>
+<P>Your server must be capable of handling multiple concurrent
+requests, and as part of this capability, must provide locking
+functionality as specified in the interface provided above.&nbsp; You
+may assume that at any moment, at most one program is accessing the
+database file; therefore your locking system only needs to be
+concerned with multiple concurrent clients of your server.&nbsp; Any
+attempt to lock a resource that is already locked should cause the
+current thread to give up the CPU, consuming no CPU cycles until the
+desired resource becomes available. 
+</P>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="data"></A>Data file Format</H2>
+<P>The format of data in the database file is as follows: 
+</P>
+<P>Start of file <BR>4 byte numeric, magic cookie value identifies
+this as a data file <BR>4 byte numeric, offset to start of record
+zero <BR>2 byte numeric, number of fields in each record 
+</P>
+<P>Schema description section. <BR>Repeated for each field in a
+record: <BR>2 byte numeric, length in bytes of field name <BR>n bytes
+(defined by previous entry), field name <BR>2 byte numeric, field
+length in bytes <BR>end of repeating block 
+</P>
+<P>Data section. (offset into file equal to &quot;offset to start of
+record zero&quot; value) <BR>Repeat to end of file: <BR>2 byte flag.
+00 implies valid record, 0x8000 implies deleted record <BR>Record
+containing fields in order specified in schema section, no separators
+between fields, each field fixed length at maximum specified in
+schema information 
+</P>
+<P>End of file 
+</P>
+<P>All numeric values are stored in the header information use the
+formats of the DataInputStream and DataOutputStream classes. All text
+values, and all fields (which are text only), contain only 8 bit
+characters, null terminated if less than the maximum length for the
+field. The character encoding is 8 bit US ASCII. 
+</P>
+<H3 CLASS="western">Database schema</H3>
+<P STYLE="margin-bottom: 0in">The database that Bodgitt and Scarper
+uses contains the following fields: 
+</P>
+<TABLE CELLPADDING=2 CELLSPACING=2>
+	<TR VALIGN=TOP>
+		<TD>
+			<P><B>Field descriptive name</B></P>
+		</TD>
+		<TD>
+			<P><B>Database field name</B></P>
+		</TD>
+		<TD>
+			<P><B>Field length</B></P>
+		</TD>
+		<TD>
+			<P><B>Detailed description</B></P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>Subcontractor Name</P>
+		</TD>
+		<TD>
+			<P>name</P>
+		</TD>
+		<TD>
+			<P>32</P>
+		</TD>
+		<TD>
+			<P>The name of the subcontractor this record relates to.</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>City</P>
+		</TD>
+		<TD>
+			<P>location</P>
+		</TD>
+		<TD>
+			<P>64</P>
+		</TD>
+		<TD>
+			<P>The locality in which this contractor works</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>Types of work performed</P>
+		</TD>
+		<TD>
+			<P>specialties</P>
+		</TD>
+		<TD>
+			<P>64</P>
+		</TD>
+		<TD>
+			<P>Comma separated list of types of work this contractor can
+			perform.</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>Number of staff in organization</P>
+		</TD>
+		<TD>
+			<P>size</P>
+		</TD>
+		<TD>
+			<P>6</P>
+		</TD>
+		<TD>
+			<P>The number of workers available when this record is booked</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>Hourly charge</P>
+		</TD>
+		<TD>
+			<P>rate</P>
+		</TD>
+		<TD>
+			<P>8</P>
+		</TD>
+		<TD>
+			<P>Charge per hour for the subcontractor. This field includes the
+			currency symbol</P>
+		</TD>
+	</TR>
+	<TR VALIGN=TOP>
+		<TD>
+			<P>Customer holding this record</P>
+		</TD>
+		<TD>
+			<P>owner</P>
+		</TD>
+		<TD>
+			<P>8</P>
+		</TD>
+		<TD>
+			<P ALIGN=LEFT><SPAN STYLE="text-decoration: none"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="font-style: normal"><SPAN STYLE="font-weight: normal">The
+			customer id (an 8 digit number) . Note that for this
+			application,you should assume that both the customers and the CSRs
+			know the customer id. However the booking must always be made by
+			CSR by entering the customer id against the subcontractor details.</SPAN></SPAN></FONT></FONT></SPAN></P>
+		</TD>
+	</TR>
+</TABLE>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western"><A NAME="Deliverables"></A>Deliverables</H2>
+<H3 CLASS="western">Target Platform and Execution</H3>
+<P>Throughout this exercise, you must use exclusively the Java 2
+platform. You may develop your code using any implementation of the
+Java 2 platform, but the submission that you return must have been
+tested and shown to work under a production (not development) version
+of the Sun Microsystems' Java 2 platform and that platform must not
+have been superseded by a new production version for more than 18
+months by the time you make your submission. 
+</P>
+<P>You are permitted to use any IDE tool you choose, but you must not
+submit any code that is not your own work. The final program must
+have no dependencies on any libraries other than those of the Java 2
+Platform. 
+</P>
+<P>When you submit your assignment, each part (client and server)
+must be executable using a command of this exact form: 
+</P>
+<BLOCKQUOTE><TT CLASS="western">java -jar &lt;path_and_filename&gt;
+[&lt;mode&gt;]</TT></BLOCKQUOTE>
+<P>Your programs must not require use of command line arguments other
+than the single mode flag, which must be supported.&nbsp; Your
+programs must not require use of command line property
+specifications. All configuration must be done via a GUI, and must be
+persistent between runs of the program. Such configuration
+information must be stored in a file called suncertify.properties
+which must be located in the current working directory. 
+</P>
+<P>The mode flag must be either &quot;server&quot;, indicating the
+server program must run, &quot;alone&quot;, indicating standalone
+mode, or left out entirely, in which case the network client and gui
+must run. 
+</P>
+<P>You must not require manual editing of any files by the examiners.
+</P>
+<H3 CLASS="western">Packaging of Submissions</H3>
+<P>All elements of your submission must be packaged in a single JAR
+file. The JAR file must have the following layout and contents in its
+root: 
+</P>
+<UL>
+	<LI><P STYLE="margin-bottom: 0in">The executable JAR containing the
+	programs. This must be called <TT CLASS="western">runme.jar</TT>. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">The original, <I>unchanged</I>
+	database file that was supplied to you. Note that you must keep a
+	copy of the original database file supplied to you, and this must be
+	the file you submit. The marking process will expect the exact same
+	data without any changes. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">A directory called <TT CLASS="western">code</TT>,
+	containing all the source code and related parts of your project.
+	You must create subdirectories within this to reflect your package
+	structure and distribute your source files within those directories.
+		</P>
+	<LI><P STYLE="margin-bottom: 0in">A file called <TT CLASS="western">version.txt.</TT>
+	This must contain pure ASCII (not a word processor format)
+	indicating the exact version of JDK you used, and the host platform
+	you worked on. 
+	</P>
+	<LI><P STYLE="margin-bottom: 0in">A directory called <TT CLASS="western">docs</TT>,
+	containing the following items at the top level: 
+	</P>
+	<UL>
+		<LI><P STYLE="margin-bottom: 0in">This html file. 
+		</P>
+		<LI><P STYLE="margin-bottom: 0in">A subdirectory called javadoc,
+		containing HTML/Javadoc documentation for all classes and
+		interfaces you are submitting. 
+		</P>
+		<LI><P STYLE="margin-bottom: 0in">A file called <TT CLASS="western">choices.txt</TT>
+		that containing pure ASCII (not a word processor format) text
+		describing the significant design choices you made. Detail the
+		problems you perceived, the issues surrounding them, your value
+		judgments, and the decisions that you made. This document should
+		also describe any uncertainties you had regarding the project, and
+		the decisions you made when resolving them. 
+		</P>
+		<LI><P>User documentation for the database server and the gui
+		client. If your user documentation is online then you may omit this
+		file. However, if the documentation is not online, you must provide
+		either a single plain ASCII (not word processor format) text
+		document, which must be called <TT CLASS="western">userguide.txt</TT>,
+		or multiple HTML files which must all be accessible from a starting
+		point document that must be called <TT CLASS="western">userguide.html</TT>.
+				</P>
+	</UL>
+</UL>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western" ALIGN=CENTER><A NAME="marking"></A>Marking</H2>
+<P>This section describes how your submission will be marked, and the
+marking criteria which govern allocation of marks for the Sun
+Certified Developer for the Java 2 platform application submission.
+The first part describes the marking process, and the second
+describes how the marks are allocated. 
+</P>
+<P><B>How The Assignment is Marked</B> 
+</P>
+<P>The marking is done in three phases.&nbsp; First, software checks
+that overall structure and nomenclature conform to specification.&nbsp;
+Second the examiner runs the code ensuring that it functions
+correctly through the specified operations. If any automatic failures
+are noted at this stage, the marking process terminates and the
+assignment is failed. 
+</P>
+<P>Provided the essential behavioral requirements of the assignment
+have been correctly implemented, the examiner proceeds to investigate
+the design and implementation of your assignment. This process is
+time consuming, and it is because this is done carefully and
+thoroughly that submissions take time to grade. The grading process
+is closely controlled to ensure consistency and fairness, and it is
+performed according to criteria detailed in the next section. At any
+time during this process, if an automatic failure is noted, the
+marking process terminates, and the assignment is failed. For any
+design choice concerning topics not specifically described in the
+requirements, marks are awarded for a clear and consistent approach,
+rather than for any particular solution. Design decisions must be
+described <I>briefly but clearly</I> in your comments. 
+</P>
+<P>In addition to the submission, you will be required to take a
+written examination. This exam tests your understanding of your
+submission and asks you to justify a number of design choices
+embodied in that submission. 
+</P>
+<H3 CLASS="western">Automatic Failures</H3>
+<P><I>As noted at the beginning of this document, where this document
+uses the word &quot;must&quot; an absolute requirement is being
+described. If you fail to adhere to such a requirement, your
+assignment will be failed automatically, and without further
+evaluation. It is therefore imperative that you pay close attention
+to any statement using the word &quot;must&quot; in this document.</I>
+</P>
+<H3 CLASS="western"><B>Marking Criteria</B></H3>
+<P>Your work will be evaluated based on the following criteria. The
+minimum passing score is 320 out of a possible 400 points. 
+</P>
+<P>General Considerations (80 points)<BR>Documentation (50
+points)<BR>Object-Oriented Design (50 points)<BR>GUI (70
+points)<BR>Locking (80 points)<BR>Language Fluency (70 points) <BR>&nbsp;
+<BR>&nbsp; 
+</P>
+<P STYLE="margin-bottom: 0in"><A HREF="#top"><I>Return to top</I></A>
+</P>
+<HR>
+<H2 CLASS="western" ALIGN=CENTER><A NAME="whattodo"></A>What to do if
+you have a question</H2>
+<P>You might find that you want to ask for further explanation of
+some part of this document, perhaps to seek permission to solve a
+problem in a particular way. This document deliberately leaves some
+issues unspecified, and some problems unraised. Your ability to think
+through these issues, in the face of realistically imperfect
+specifications, and come to a tenable solution is something upon
+which you are being graded. 
+</P>
+<P>In general, you should <I>not</I> ask your question; rather you
+should consider the options available and make a decision about how
+to address the problem yourself. This decision-making process is part
+of the marking scheme, and as such it is crucially important that you
+provide documentation of your choice. Be sure to describe the options
+you considered, the perceived benefits and weaknesses of each, and
+why you chose the solution you did. Provided you do not contravene
+any specification in this document you will not be marked on the
+particular choice that you made, but rather on the consistency of
+your decision making process and your adherence to other aspects of
+these notes during that decision making process. 
+</P>
+<P>If you feel you must ask your question, you should address it to
+who2contact@sun.com. Clearly indicate that the question relates to
+the Sun Certified Developer Exam, provide your candidate ID number,
+name, and include your return email address in the <I>body</I> of
+your message. Describe your issue as briefly as reasonably possible;
+you will be asked for more information if necessary. 
+</P>
+<P><A HREF="#top"><I>Return to top</I></A> 
+</P>
+</BODY>
+</HTML>
