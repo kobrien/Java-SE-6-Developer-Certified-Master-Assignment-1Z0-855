@@ -9,12 +9,13 @@
  * Oracle Testing ID: OC1256324‎
  *
  */
-package suncertify.server;
+package suncertify.business;
 
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 public interface RemoteSubcontractorService extends Remote,
-	SubcontractorService {
+SubcontractorService {
 
-    public void startServer(int port);
+    void startServer(int serverPort) throws RemoteException;
 }

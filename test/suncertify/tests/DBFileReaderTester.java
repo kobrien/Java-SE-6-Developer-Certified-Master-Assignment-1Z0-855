@@ -13,7 +13,7 @@
  * not be used out of this context and must be used exclusively by Oracle and
  * Sun Microsystems, Inc.
  */
-package suncertify.tests.db;
+package suncertify.tests;
 
 import java.io.*;
 

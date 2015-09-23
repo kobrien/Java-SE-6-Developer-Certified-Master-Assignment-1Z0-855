@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class Data implements IDatabase {
     private final static Logger LOGGER = Logger.getLogger(Data.class.getName());
 
-    private final Cache cache;
+    private final SubcontractorCache cache;
 
     /**
      * Constructor takes the absolute path to the database file. This path
@@ -48,10 +48,11 @@ public class Data implements IDatabase {
     public Data(final String databasePath) throws DatabaseException {
 	LOGGER.info("Creating new Data instance");
 	// Creates a connection to the database file if not already done so
-	DBFileReader.initializeConnection(databasePath);
+	DBFileAccess.initializeConnection(databasePath);
 
 	// Get a reference to the cache, creating it if not already created
-	this.cache = Cache.getInstance();
+	this.cache = SubcontractorCache.getInstance();
+	LOGGER.info("Successfully created new Data instance");
     }
 
     /**
@@ -67,7 +68,8 @@ public class Data implements IDatabase {
     @Override
     public String[] read(final int recNo) throws RecordNotFoundException {
 	// TODO lock the record before reading to avoid dirty reads
-	final Subcontractor subcontractor = this.cache.getSubcontractor(recNo);
+	final SubcontractorRecord subcontractor = this.cache
+		.getSubcontractor(recNo);
 
 	if (subcontractor == null) {
 	    throw new RecordNotFoundException("Record number " + recNo
@@ -96,22 +98,22 @@ public class Data implements IDatabase {
     public void update(final int recNo, final String[] data)
 	    throws RecordNotFoundException {
 
-	final Subcontractor subcontractor = this.cache.getSubcontractor(recNo);
-
-	if (subcontractor == null) {
+	if (!cache.doesSubcontractorRecordExist(recNo)) {
 	    throw new RecordNotFoundException("Record " + recNo
 		    + "not found in cache");
 	}
+	final SubcontractorRecord subcontractor = this.cache
+		.getSubcontractor(recNo);
 
 	// update the fields for this subcontractor object - this also validates
-	// that they are correct number etc.
+	// the data arguments otherwise an IllegalArgumentException will
+	// be raised
 	subcontractor.update(data);
 
-	// Check if the record number was changed i.e. if name and/or location
-	// fields were updated
-	if (recNo != subcontractor.hashCode()) {
-	    // if so remove the old record number from cache as this is no
-	    // longer valid
+	// Check if the record number was changed (i.e. if name and/or location
+	// fields were updated) and if so remove the old record number from the
+	// cache
+	if (recNo != subcontractor.getRecordNumber()) {
 	    cache.removeSubcontractor(recNo);
 	}
 
@@ -125,13 +127,20 @@ public class Data implements IDatabase {
      * Deletes a subcontractor record, making the record number and associated
      * disk storage available for reuse.
      *
+     * This method marks the subcontractor record as deleted, rather than
+     * removing from the cache. The reason for this is so that we can write the
+     * record back to disk with the record marked as 'deleted'
+     *
      * @param recNo
      *            - The record number to delete
      * @throws RecordNotFoundException
      */
     @Override
     public void delete(final int recNo) throws RecordNotFoundException {
-	// TODO
+	// TODO document how this is partially implemented?
+	final SubcontractorRecord subcontractor = this.cache
+		.getSubcontractor(recNo);
+	subcontractor.setRecordAsDeleted();
     }
 
     /**
@@ -169,7 +178,7 @@ public class Data implements IDatabase {
     @Override
     public int create(final String[] data) throws DuplicateKeyException {
 	return 0;
-	// TODO
+	// TODO don't implement?
     }
 
     /**
@@ -183,6 +192,10 @@ public class Data implements IDatabase {
      */
     @Override
     public void lock(final int recNo) throws RecordNotFoundException {
+	if (!cache.doesSubcontractorRecordExist(recNo)) {
+	    throw new RecordNotFoundException("Subcontractor record number "
+		    + recNo + " does not exist in cache");
+	}
 	LockManager2.lockRecord(recNo, this);
     }
 
@@ -195,6 +208,10 @@ public class Data implements IDatabase {
      */
     @Override
     public void unlock(final int recNo) throws RecordNotFoundException {
+	if (!cache.doesSubcontractorRecordExist(recNo)) {
+	    throw new RecordNotFoundException("Subcontractor record number "
+		    + recNo + " does not exist in cache");
+	}
 	LockManager2.unlockRecord(recNo, this);
 
     }
@@ -213,15 +230,8 @@ public class Data implements IDatabase {
 	return LockManager2.isRecordLocked(recNo);
     }
 
-    /**
-     * Saves the contents of the cache back to disk. This method should be
-     * called when the application terminates, either normally or abnormally
-     *
-     * @throws DatabaseException
-     */
     @Override
-    public void saveData() throws DatabaseException {
-	DBFileReader.persistAllSubcontractors(cache.getCachedSubcontractors());
+    public synchronized void saveData() throws DatabaseException {
+	DBFileAccess.writeAllSubcontractorsToFile();
     }
-
 }

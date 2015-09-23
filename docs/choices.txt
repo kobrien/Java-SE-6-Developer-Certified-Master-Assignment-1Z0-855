@@ -111,6 +111,7 @@ Presentation/Layer UI
 - what does this requirement mean "expectation of future functionality enhancements"? In the intro we are told that the java app will not be a long term project, and will be ultimately replaced with a web application. (hint: use layout managers like BorderLayout, FlowLayout, GridBagLayout, this eases the introduction of new UI components)
 
 
+if one client books a record, should the window in other clients update accordingly? This would require a shared model, whereas i have implmeneted in a way that each client window has its own table model
 
 
 
@@ -186,6 +187,7 @@ DBMain interface limitations...
 - lock/unlock adds to the complexity of this class, should just be CRUD. Extract this functionliaty away?
 - Interacts with the DB using ints and string arrays, very primitive.. difficut for business layer to interact with, need to use a data object.
 	Based on above point, each record in the data file is accessed using a precise data schema based on byte size and locations, first thing to do is create a simple object which extracts away from this and represents in a more readable manner. a contractor/record object. 
+- update method will be used for booking a record, i.e. setting a customer ID. There is no constraint on updating this again and again with a different number. 
 
 DAO - Data access object encapsulates the data access and interacts with the database file
 should be thread safe
@@ -200,9 +202,14 @@ Writing the file contents to memory shouldnt be an issue given the current size 
 *use MAP class for implementing the cache i.e. Map<Long, Record>
 *this must be thread-safe i.e. use sychronization
 
-LIMITATION
+LIMITATIONS
 The DBMain interface does not provide a save mechansm, We can not modify the DBMain interface, i.e. adding a method to flush contents back to disk. This is one limitiation of the interface. solution = write a custom interface which extends this interface and add the custom functionality to that.
 (Document how this limitation was overcome!!)
+
+
+In order to book a record, the record needs to blocked then the customer ID field needs to be updated, unlocked. 
+What happens if another thread acquires the record and updates the customer ID again? I can only prevent this by allowing the customer ID to only be updated once i.e. check for null at first and then block any subsquent update. This means that a record can not be unbooked. There is no mention of this in the requirements so i am going to presume this is the common use case. If in the future a record needs to be unbooked then we could allow the customer ID to be set to null by a subsequent thread.
+
 
 Implement the DAO as a singleton object? 
 Yes - It keeps the access to the database unique and synchronized.
@@ -221,7 +228,25 @@ Answer is yes as i need to throw a duplicateKey exception when creating a new re
 
 Primary Key
 	The DBMain has a create method for creating a new record (Contractor) in the database. Each contractor record must have a primary key to identify it's uniqueness, otherwise a DuplicateKeyException will be raised if the application tries to create the same record. 
-	There are different fields for a contractor, but none of these are unique therefore i need to create a composite key i.e. one or more keys to make up a primary key. I will choose name and location for this.
+	There are different fields for a contractor, but none of these are unique therefore i need to create a composite key i.e. one or more keys to make up a primary key. I will choose name and location for this combined with hash code for the object.
+
+
+
+Add these in properly later...
+
+- removed interface and added the save method as a static method to DBFIleAccess class
+- mention how we are writing everything back to disk in a bulk operation
+- deleted records are updated in cache and do not get written back to file, so db file will reduce in size if so
+- try and save perioidically as i acknowledge data might not be updated from cache to disk in worst case scenario
+- using string builder object to write record back to disk (maintaining byte size for each field)
+- reading byte records, converting to string and creating subcontractor objects at the DBFileAccess layer
+- cache is a singleton object, created on first instantiation of Data class
+- Lock manager static methods, lockedRecords map is a class variable (Only one can exist)
+- using find method to return all records
+
+
+
+
 
 
 
@@ -230,7 +255,7 @@ Business layer component
 ---------------------------
 
 The business layer API will set on the server side (i.e. Thin client)
-Define an interface with all the major functionality (remember to throw correct exceptions i.e. For RMI we need to throw Remote Exception)
+Define an interface with common functionality (remember to throw correct exceptions i.e. For RMI we need to throw Remote Exception)
 Define any root/generic exceptions here i.e. BookingsException and remember that all other business layer exceptions should extend this i.e. A hierachy of business layer exceptions
 Remember to maintain the level of abstraction i.e. in the persistence layer we use RecordNotFoundException, in the bussiness layer we should use BookingNotFoundException
 There should be 2 implementations of this interface, one for client-server and the other for standalone client.
@@ -244,7 +269,8 @@ The command line "mode" arg is passed when starting the application, we will use
 
 The business layer is dependent on the creation of a DAO, we can use constructor dependeny injection to pass this in when instaniated 
 
-
+ABSTRACTION!! maintenance/OO oriented..flexibile! The presentation layer talks to the business layer via the interface, and hence doens't need to know about the underlying implementation.
+With this in mind the only way we know which implementation to use is based on the command line argument when the application starts, so it is here where we must "create" the correct business components (server or standlone) and hand this to the pres layer.
 
 
 
@@ -300,8 +326,17 @@ GUI/Presentation Layer
 -------------------------
 
 
+Talk about factory pattern with regard to how we are creating the correct business component based on which dialog mode we are using. via the ok button listener (getService())
 
+Defining an abstract class, 2 subclasses (client /standalone) etc
 
+hierachy of configuration launchers (standalone, client, server) - good polymorphism
+
+Considered using a resource bundle to contain all the UI properties ex. buttons/labels/jframe titles, but given the scale of this application i coded the values as fixed values instead.
+
+properties class to read and write configuration properties
+
+Start exception rather than services exception to give more abstraction if an error occurs
 
 
 
@@ -324,5 +359,14 @@ Record Locking
 
 
 
+Searching
+----------
+explain the flow
+search action listener -> business service -> DBMain -> SubcontractorRecord "matchesCriteria" func
 
+the DBmain interface returns true for partial matches, the user requiremnets are exact, so explain how i put in another filter at the middle tier before returning the matching records
 
+3 separate functions to allow searching by name, location, or both
+
+matchesCriteria implemetnation. null values return true, empty string values in crtieria list i ignore as these return true. 
+Using startswith string method 

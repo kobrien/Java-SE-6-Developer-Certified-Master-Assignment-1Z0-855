@@ -40,8 +40,9 @@ public interface DatabaseConstants {
      * The expected value of the magic cookie, this verifies that the database
      * is valid.
      */
-    // NOTE: I read this value myself from the database and I am storing it
-    // here as it must be known prior to reading the database in order to verify
+    // NOTE: This value was obtained by reading the database file manually, the
+    // reason we are not reading this dynamically is because this value must be
+    // known upfont in order to verify if the DB file is valid
     public static final int EXPECTED_MAGIC_COOKIE_VALUE = 514;
 
     /**
@@ -69,11 +70,11 @@ public interface DatabaseConstants {
      * Data Section values
      */
 
-    /** The value that identifies a record as being valid */
-    public static final int VALID_RECORD = 00;
-
     /** The number of bytes that store the valid flag value */
     public static final int VALID_RECORD_LENGTH_BYTES = 2;
+
+    /** The value that identifies a record as being valid */
+    public static final int VALID_RECORD = 00;
 
     /** The value that identifies a record as being deleted */
     public static final int DELETED_RECORD = 0x8000;

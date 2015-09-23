@@ -22,15 +22,15 @@ public class RecordNotFoundException extends DatabaseException {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Constructs a new RecordNotFoundException
+     * Constructs a new {@code RecordNotFoundException} object
      */
     public RecordNotFoundException() {
 
     }
 
     /**
-     * Constructs a new RecordNotFoundException with the specified detail
-     * message
+     * Constructs a new {@code RecordNotFoundException} with the specified
+     * detail message
      *
      * @param message
      *            description message of the exception

@@ -14,7 +14,6 @@ package suncertify.db;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.locks.*;
-import java.util.logging.Logger;
 
 /**
  * The <code>LockManager</code> class is responsible for handling multiple
@@ -35,9 +34,6 @@ import java.util.logging.Logger;
  *
  */
 public class LockManager2 {
-    private final static Logger LOGGER = Logger.getLogger(LockManager.class
-	    .getName());
-
     private static Map<Integer, Data> lockedRecords = new HashMap<Integer, Data>();
     private static Lock lock = new ReentrantLock();
     private static Condition lockReleased = lock.newCondition();
@@ -57,7 +53,7 @@ public class LockManager2 {
     static void lockRecord(final int recNo, final Data client) {
 	lock.lock();
 	try {
-	    while (lockedRecords.containsKey(recNo)) {
+	    while (isRecordLocked(recNo)) {
 
 		// Wait until the record lock is released by another thread
 		lockReleased.await();
@@ -86,7 +82,7 @@ public class LockManager2 {
 	lock.lock();
 	try {
 	    // Return if the record is already unlocked
-	    if (lockedRecords.containsKey(recNo)) {
+	    if (isRecordLocked(recNo)) {
 		// Make sure the locked record belongs to this client thread
 		// and if so unlock it and signal to other threads
 		if (lockedRecords.get(recNo) == client) {

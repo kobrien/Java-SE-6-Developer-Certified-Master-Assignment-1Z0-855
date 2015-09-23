@@ -31,6 +31,6 @@ public interface IDatabase extends DBMain {
      *
      * @throws DatabaseException
      */
-    public void saveData() throws DatabaseException;
+    void saveData() throws DatabaseException;
 
 }

@@ -15,17 +15,17 @@ import java.util.*;
 import java.util.logging.Logger;
 
 /**
- * {@code Cache} is used to store in memory all contractor objects read from the
- * database file. When the application starts all records are read from disk
- * into this cache stored as {@code Subcontractor} objects. The {@code Data}
- * class is responsible for creating the cache on start up (and populating as a
- * result of this) and flushing it's contents back to disk when the application
- * terminates either normally or abnormally. From a design point of view the
- * purpose of this class is to provide better performance as there is less disk
- * I/O involved. It also guarantees data integrity as we can synchronize
- * directly on the singelton cache object when modifying records. Also as we are
- * not writing to disk in real time we avoid any bad writes say for example if
- * the I/O stream terminates abnormally.
+ * {@code SubcontractorCache} is used to store all contractor objects read from
+ * the database file in memory. When the application starts all records are read
+ * from disk into this cache stored as {@code Subcontractor} objects. The
+ * {@code Data} class is responsible for creating the cache on start up (and
+ * populating as a result of this) and flushing it's contents back to disk when
+ * the application terminates either normally or abnormally. From a design point
+ * of view the purpose of this class is to provide better performance as there
+ * is less disk I/O involved. It also guarantees data integrity as we can
+ * synchronize directly on the singleton cache object when modifying records.
+ * Also as we are not writing to disk in real time we avoid any bad writes say
+ * for example if the I/O stream terminates abnormally.
  *
  * The cache does not store any information about where the records are
  * persisted in the database i.e. byte locations, it is purely used to hold
@@ -34,13 +34,13 @@ import java.util.logging.Logger;
  * @author Kieran O'Brien
  *
  */
-public class Cache {
+public class SubcontractorCache {
     private final static Logger LOGGER = Logger
-	    .getLogger(Cache.class.getName());
+	    .getLogger(SubcontractorCache.class.getName());
 
-    private static Cache instance;
+    private static SubcontractorCache instance;
 
-    private final Map<Integer, Subcontractor> cachedRecords;
+    private final Map<Integer, SubcontractorRecord> cachedRecords;
 
     /**
      * Creates a new Cache object. This cache object is used by the Data class
@@ -51,9 +51,9 @@ public class Cache {
      *
      * @throws DatabaseException
      */
-    private Cache() {
+    private SubcontractorCache() {
 	LOGGER.info("Creating new cache instance");
-	this.cachedRecords = new HashMap<Integer, Subcontractor>();
+	this.cachedRecords = new HashMap<Integer, SubcontractorRecord>();
 
 	try {
 	    this.populateCache();
@@ -70,9 +70,15 @@ public class Cache {
      *
      * @return The {@code Cache} object
      */
-    public static Cache getInstance() {
+    public static SubcontractorCache getInstance() {
 	if (instance == null) {
-	    instance = new Cache();
+	    // TODO verify i want this double checked locking
+	    synchronized (SubcontractorCache.class) {
+		// critical section - only 1 thread can execute here
+		if (instance == null) {
+		    instance = new SubcontractorCache();
+		}
+	    }
 	}
 	return instance;
     }
@@ -89,16 +95,15 @@ public class Cache {
     private void populateCache() throws DatabaseException {
 	LOGGER.info("Populating cache with subcontractor records from database");
 
-	List<Subcontractor> subcontractors = new ArrayList<Subcontractor>();
+	List<SubcontractorRecord> subcontractors = new ArrayList<SubcontractorRecord>();
 
-	subcontractors = DBFileReader.getAllSubcontractors();
+	subcontractors = DBFileAccess.getAllSubcontractors();
 
-	for (final Subcontractor sub : subcontractors) {
-	    // Get the unique hash code of the subcontractor object and use this
-	    // as the record number key in cache
-	    final int recordNumber = sub.hashCode();
-	    this.addSubcontractor(recordNumber, sub);
+	for (final SubcontractorRecord sub : subcontractors) {
+	    this.addSubcontractor(sub.getRecordNumber(), sub);
 	}
+
+	LOGGER.info("Successfully populated the cache");
 
     }
 
@@ -113,7 +118,7 @@ public class Cache {
      *            Subcontractor object
      */
     public void addSubcontractor(final int recordNo,
-	    final Subcontractor subcontractor) {
+	    final SubcontractorRecord subcontractor) {
 	// TODO synchronize on the cache object here or from the Data class?
 	// Lock should be called before calling Data.update
 	synchronized (cachedRecords) {
@@ -129,7 +134,7 @@ public class Cache {
      *            The unique record number key for this subcontractor record
      * @return Subcontractor object
      */
-    public Subcontractor getSubcontractor(final int recordNo) {
+    public SubcontractorRecord getSubcontractor(final int recordNo) {
 	return this.cachedRecords.get(recordNo);
     }
 
@@ -167,13 +172,13 @@ public class Cache {
      */
     public int[] findSubcontractors(final String[] criteria) {
 	// Get the list of all subcontractor from cache
-	final List<Subcontractor> subcontractors = getCachedSubcontractors();
+	final List<SubcontractorRecord> subcontractors = getCachedSubcontractors();
 
 	// Each matching subcontractor will be added to this list
 	final List<Integer> matchingRecordNumbersList = new ArrayList<Integer>();
 
-	for (final Subcontractor subcontractor : subcontractors) {
-	    if (subcontractor.containsField(criteria)) {
+	for (final SubcontractorRecord subcontractor : subcontractors) {
+	    if (subcontractor.matchesCriteria(criteria)) {
 		matchingRecordNumbersList.add(subcontractor.hashCode());
 	    }
 	}
@@ -189,8 +194,18 @@ public class Cache {
 	return results;
     }
 
-    List<Subcontractor> getCachedSubcontractors() {
-	return new ArrayList<Subcontractor>(this.cachedRecords.values());
+    boolean doesSubcontractorRecordExist(final int recNo) {
+	return cachedRecords.containsKey(recNo);
+
+    }
+
+    // TODO i think i need to synchronize this as i dont want another thread to
+    // update a record in the middle of returning this list to another thread
+    List<SubcontractorRecord> getCachedSubcontractors() {
+	synchronized (this.cachedRecords) {
+	    return new ArrayList<SubcontractorRecord>(
+		    this.cachedRecords.values());
+	}
     }
 
 }

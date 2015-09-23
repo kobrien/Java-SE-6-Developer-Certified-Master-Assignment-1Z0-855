@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 /**
- * {@code DBFileManager} is responsible for reading and writing records to the
+ * {@code DBFileAccess} is responsible for reading and writing records to the
  * database file. It is instantiated and should only be used by the {@code Data}
  * class. All records are read and converted to {@code Subcontractor} objects
  * and then returned to the {@Data} class to be loaded into cache at
@@ -18,12 +18,12 @@ import java.util.logging.Logger;
  * @author Kieran O'Brien
  *
  */
-public class DBFileReader {
-    private final static Logger LOGGER = Logger.getLogger(DBFileReader.class
+public class DBFileAccess {
+    private final static Logger LOGGER = Logger.getLogger(DBFileAccess.class
 	    .getName());
 
     private static int MAGIC_COOKIE_VALUE;
-    private static int NUMBER_FIELDS_PER_RECORD_VALUE;
+
     private static int FIRST_RECORD_LOCATION_VALUE;
 
     private static RandomAccessFile databaseFile = null;
@@ -31,7 +31,7 @@ public class DBFileReader {
     private static final String FILE_ACCESS_MODE = "rw";
 
     /**
-     * This method is called by the Data class constructor passing it the
+     * This method is called by the constructor of {@code Data} passing it the
      * absolute file path to the database. It creates a connection to the
      * database file and holds a reference to it for all other static methods in
      * this class to use. This is done only once and every subsequent call is
@@ -47,19 +47,31 @@ public class DBFileReader {
 	// Only initialize if the database file is null
 	if (databaseFile == null) {
 	    try {
-		LOGGER.info("Creating connection to database file "
+		LOGGER.info("initializing connection to database file "
 			+ databasePath);
 
-		databaseFile = new RandomAccessFile(databasePath,
-			FILE_ACCESS_MODE);
+		// Check if the database file actually exists
+		final File f = new File(databasePath);
+		if (!f.isFile()) {
+		    throw new FileNotFoundException();
+		}
+
+		databaseFile = new RandomAccessFile(f, FILE_ACCESS_MODE);
+
+		if (databaseFile.length() == 0) {
+		    throw new DatabaseException("Empty database file "
+			    + databasePath);
+		}
 
 		readDatabaseHeaderValues();
-
 		verifyValidDatabase();
 
 	    } catch (final FileNotFoundException exception) {
-		throw new DatabaseException(
-			"The path to the database file does not exist.");
+		throw new DatabaseException("Invalid database file path "
+			+ databasePath);
+	    } catch (final IOException e) {
+		throw new DatabaseException("Could not read database file "
+			+ databasePath + ". IO Error: " + e.getMessage());
 	    }
 	}
     }
@@ -88,10 +100,10 @@ public class DBFileReader {
      * @return The list of subcontractor objects
      * @throws DatabaseException
      */
-    public static List<Subcontractor> getAllSubcontractors()
+    public static List<SubcontractorRecord> getAllSubcontractors()
 	    throws DatabaseException {
 	LOGGER.info("Reading all subcontractor records from database");
-	final List<Subcontractor> subcontractors = new ArrayList<Subcontractor>();
+	final List<SubcontractorRecord> subcontractors = new ArrayList<SubcontractorRecord>();
 
 	try {
 	    final long databaseLength = databaseFile.length();
@@ -101,7 +113,7 @@ public class DBFileReader {
 	    // creating subcontractor objects for each one until we reach the
 	    // end of the file
 	    for (long fileOffset = FIRST_RECORD_LOCATION_VALUE; fileOffset < databaseLength; fileOffset += totalRecordLength) {
-		final Subcontractor subcontractor = readSubcontractorRecord(fileOffset);
+		final SubcontractorRecord subcontractor = readSubcontractorRecord(fileOffset);
 
 		if (subcontractor != null) {
 		    subcontractors.add(subcontractor);
@@ -136,10 +148,6 @@ public class DBFileReader {
 	    databaseFile.readFully(offsetStartRecordZero);
 	    FIRST_RECORD_LOCATION_VALUE = getIntValueFromByteArray(offsetStartRecordZero);
 
-	    final byte[] numberFieldsPerRecordValue = new byte[DatabaseConstants.NUMBER_OF_FIELDS_PER_RECORD_VALUE_BYTES];
-	    databaseFile.readFully(magicCookieValue);
-	    NUMBER_FIELDS_PER_RECORD_VALUE = getIntValueFromByteArray(numberFieldsPerRecordValue);
-
 	} catch (final IOException e) {
 	    throw new DatabaseException(
 		    "I/O error occured trying to read database file "
@@ -158,14 +166,11 @@ public class DBFileReader {
      * @return The Subcontractor object
      * @throws DatabaseException
      */
-    private static Subcontractor readSubcontractorRecord(final long fileOffset)
-	    throws DatabaseException {
+    private static SubcontractorRecord readSubcontractorRecord(
+	    final long fileOffset) throws DatabaseException {
 
-	LOGGER.info("Seeking to file offset " + fileOffset
-		+ " to read single subcontractor record");
-
-	final byte[] validRecordValue = new byte[DatabaseConstants.VALID_RECORD];
-	final byte[] recordValues = new byte[DatabaseConstants.CONTRACTOR_RECORD_LENGTH_BYTES];
+	final byte[] validRecordValueBuffer = new byte[DatabaseConstants.VALID_RECORD_LENGTH_BYTES];
+	final byte[] recordValuesBuffer = new byte[DatabaseConstants.CONTRACTOR_RECORD_LENGTH_BYTES];
 
 	// Read the byte values from file
 	synchronized (databaseFile) {
@@ -173,29 +178,103 @@ public class DBFileReader {
 		// Update file pointer to the the file location we want to read
 		databaseFile.seek(fileOffset);
 
-		databaseFile.readFully(validRecordValue);
+		databaseFile.readFully(validRecordValueBuffer);
 
-		databaseFile.readFully(recordValues);
+		databaseFile.readFully(recordValuesBuffer);
 	    } catch (final IOException e) {
 		throw new DatabaseException(e.getMessage());
 	    }
 	}
+	// Check if the record is valid
+	final int isValidRecord = getIntValueFromByteArray(validRecordValueBuffer);
 
-	// Only create a subcontractor object if the record is valid
-	final int isValidRecord = getIntValueFromByteArray(validRecordValue);
+	SubcontractorRecord subcontractor = null;
 
-	Subcontractor subcontractor;
-
+	// only create the subcontractor object if the record is valid
 	if (isValidRecord == DatabaseConstants.VALID_RECORD) {
-	    LOGGER.info("Valid record! Converting record values and creating subcontractor object");
-	    subcontractor = createSubcontractorFromByteArrayValues(recordValues);
-	} else {
-	    LOGGER.info("Invalid Record! Returning null");
-	    subcontractor = null;
+	    subcontractor = createSubcontractorRecordFromByteArrayValues(recordValuesBuffer);
 	}
-
 	return subcontractor;
 
+    }
+
+    /**
+     * Starting at record zero, writes all subcontractor objects back to the
+     * database file overwriting the existing records on disk.
+     *
+     * @param subcontractors
+     *
+     * @throws DatabaseException
+     */
+
+    private static void persistAllSubcontractors(
+	    final List<SubcontractorRecord> subcontractors)
+		    throws DatabaseException {
+
+	final long totalRecordLength = DatabaseConstants.TOTAL_RECORD_LENGTH_BYTES;
+
+	// Starting at record location zero, Iterate over each subcontractor
+	// object and only write the record back to disk if it is valid record
+	long fileOffset = FIRST_RECORD_LOCATION_VALUE;
+
+	for (final SubcontractorRecord subcontractor : subcontractors) {
+	    if (subcontractor.isValidRecord()) {
+		writeSubcontractorRecord(subcontractor, fileOffset);
+	    }
+	    fileOffset += totalRecordLength;
+	}
+    }
+
+    /**
+     * Writes a single subcontractor record to the database file given the
+     * specified offset location. All fields are read from the subcontractor
+     * object into a string builder object (maintaining all field lengths based
+     * on the DB schema) and this is then written to disk. The 'valid record'
+     * byte is also written to the first 2 bytes of the record location based on
+     * whether the subcontractor object is valid or not
+     *
+     * @param subcontractor
+     * @param fileOffset
+     * @throws DatabaseException
+     */
+    private synchronized static void writeSubcontractorRecord(
+	    final SubcontractorRecord subcontractor, final long fileOffset)
+		    throws DatabaseException {
+
+	// Using a string builder we can write each record field value while
+	// maintaining it's correct length in bytes
+	final StringBuilder builder = subcontractor.toStringBuilder();
+
+	// Write the string value to the file
+	// TODO synchronized (databaseFile) {
+	try {
+	    // Update file pointer to the the file location we want to
+	    // write
+	    databaseFile.seek(fileOffset);
+
+	    // Write the 'valid record' to the first 2 bytes of the
+	    // record
+	    databaseFile.writeShort(DatabaseConstants.VALID_RECORD);
+
+	    // TODO Check for duplicate keys! ?
+	    // Write the record value
+	    databaseFile.write(builder.toString().getBytes());
+	} catch (final IOException e) {
+	    throw new DatabaseException(e.getMessage());
+	}
+    }
+
+    /**
+     * Saves the contents of the cache back to disk. This method should be
+     * called when the application terminates, either normally or abnormally
+     *
+     * @throws DatabaseException
+     */
+    public static void writeAllSubcontractorsToFile() throws DatabaseException {
+	// Get a reference to the cache, creating it if not already created
+	final SubcontractorCache cache = SubcontractorCache.getInstance();
+
+	persistAllSubcontractors(cache.getCachedSubcontractors());
     }
 
     /**
@@ -209,7 +288,7 @@ public class DBFileReader {
      * @throws DatabaseException
      * @throws UnsupportedEncodingException
      */
-    private static Subcontractor createSubcontractorFromByteArrayValues(
+    private static SubcontractorRecord createSubcontractorRecordFromByteArrayValues(
 	    final byte[] recordValues) throws DatabaseException {
 	// The byte array is read starting at this offset which is then
 	// incremented with each field length as we read
@@ -251,12 +330,9 @@ public class DBFileReader {
 	    lengthBytes = DatabaseConstants.CONTRACTOR_OWNER_LENGTH_BYTES;
 	    final String owner = new String(recordValues, byteOffset,
 		    lengthBytes, DatabaseConstants.ENCODING).trim();
-	    byteOffset += lengthBytes;
 
-	    LOGGER.info("Successfully parsed all record byte values; Creating subcontractor object...");
-
-	    final Subcontractor subcontractor = new Subcontractor(name,
-		    location, specialities, size, rate, owner);
+	    final SubcontractorRecord subcontractor = new SubcontractorRecord(
+		    name, location, specialities, size, rate, owner);
 
 	    return subcontractor;
 	} catch (final UnsupportedEncodingException e) {
@@ -264,11 +340,6 @@ public class DBFileReader {
 		    "Encountered an error reading record value: "
 			    + e.getMessage());
 	}
-    }
-
-    public void save(final List<Subcontractor> subcontractors) {
-	// TODO Auto-generated method stub
-
     }
 
     /**
@@ -293,12 +364,4 @@ public class DBFileReader {
 	return value;
     }
 
-    /**
-     * @param cachedSubcontractors
-     */
-    public static void persistAllSubcontractors(
-	    final List<Subcontractor> cachedSubcontractors) {
-	// TODO Auto-generated method stub
-
-    }
 }
