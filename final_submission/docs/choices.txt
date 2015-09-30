@@ -1,0 +1,257 @@
+1Z0-855 - Java SE 6 Developer Certified Master Assignment
+Candidate: Kieran O'Brien
+Oracle Testing ID: OC1256324‎
+Choices.txt
+
+===================================================
+Document Summary
+===================================================
+
+This document serves to give an account of my experience undertaking and completing the Oracle certified Java master assignment. 
+It aims to cover the following:
+- Uncertainties and questions I had regarding the project, and the decisions I made to resolve them.
+- Problems I perceived and the issues surrounding them.
+- Significant design choices I made. 
+- Value judgments / Decisions that I made.
+
+===================================================
+Initial Assumptions/Requirements
+===================================================
+
+Upon first receiving the assignment I read, and re-read the instructions document to get a clear understanding of what was required. I highlighted anything that I was unsure about and took note of this.
+Below I have listed some of the main requirement areas that stood out to me at this early stage, most of which were straightforward and did not require any further clarification. 
+This is essentially a summarized list of requirements that I created based on those that were included in the instructions document. You may skip reading this list but I have included it tosimply state what my requirements were in case there is any uncertainty on why I decided to do something a particular way.
+
+- Development of a traditional client server application that allows users to book one or more home service contractors for their customers 
+- The Application must interact with a non-relational binary database file (db)
+- The Application must allow the user to specify the location for this db file, and persist this location as a configuration property to disk
+- The Application must have a front end GUI that presents the data in the database
+- The Application must be able to list all available contractors in the database and present this using a JTable (Java Swing library) on the GUI
+- The Application must be able to search for contractors by name and/or location
+- The Application must be able to book one or many contractors, updating the DB accordingly
+- The Application must be able to lock and book records in the database
+- No authentication is required neither for logon nor for accessing the database
+- The application must have network functionality, either using RMI or sockets which I must decide upon
+- The application must have 2 execution modes. Non-Networked (Also called Standalone) and Networked. Sockets or RMI must be used for networked implementation
+- Non-networked mode must not use loopback networking or involve any serialization of any objects when communicating between the GUI and database, the GUI must connect to the database within the same Java Virtual Machine.
+- For networked mode, the GUI (client) should retrieve records over the network by connecting to a remote server on a specific port. 
+- The server must be able to deal with multiple simultaneous requests (i.e. thread safe); a locking mechanism must be implemented for this as outlined in the DBMain interface
+- We are allowed to assume that at any given time, at most one program is accessing the database file, and therefore the locking system only needs to be concerned with multiple concurrent clients of the server. If a client is trying to access a file that is locked then this client thread should not consume any CPU cycles until it is available. This can be done by simply using Thread.Wait functionality.
+- For networked mode, I cannot use a HTTP server, or a security manager, or involve any dynamic class downloading.
+- The application GUI must only use Java Swing components for the GUI
+- The application must be written using core Java API components rather than using custom implementations
+- The implementation must be easily maintained in the future and designed in a manner that future functionality enhancements may be added
+- The configuration settings must be persisted between application runs
+- The application must be entirely contained within one JAR file
+
+===================================================
+Questions/Areas of uncertainty
+===================================================
+
+Q. Can a user (CSR) book multiple records for a customer in a single booking? 
+A. Because each home contractor may offer different services I don't see the problem with a CSR booking multiple subcontractors for a user, therefore I did not implement any checking for unique customer IDs etc.
+Regarding being able to book multiple subcontractors in one go; I did not allow this simply for the reason of keeping things simple. If the user wishes to book multiple subcontractors they will have to book each one individually.
+
+Q. Should the list of records displayed include those that have already been booked? Or should I just display the available contractors? 
+A. There was no mention of this in the instructions, I have therefore decided to show all clients and if one is booked the customer ID field will show this. If two clients book the same contractor at the same time then of course only one will succeed.
+
+Q. The book functionality presumably uses the update method to simply update the customer ID/owner field, what’s stopping another thread from updating this again and as a result overwriting a previous booking?
+A. Obviously a customer would not want this so I have included a check when making the booking if this field is not already booked, if so an alreadyBooked exception is thrown and the CSR will be notified with an error message in the GUI.
+
+Q. Can a subcontractor be unbooked?
+A. I decided not to implement this as it was not required
+
+Q. Can a CSR create/delete subcontractors as these methods are included in the DBMain interface
+A. I decided not to include this functionality in the application as it was not a business requirement. Should it be needed in the future subcontractors can easily be created and added to the cache, or likewise deleted and removed from the cache, which ultimately gets saved back to disk in the end.
+
+Q. A subcontractor has a field called "size" which is described as "the number of workers available when the record is booked". I am unsure whether this means whether the record can be booked n times by different customers, where n=size. If so this would mean that the same contractor can be booked across multiple clients, there is no mention of this in the requirements or anywhere else in the document. Also this contradicts the other field "owner" which is the customer who holds this record. 
+A. Based on the fact that there is an "owner" field I am going to assume that there is a one to one mapping for a customer-subcontractor and that the size attribute simply indicates the size of the available workforce from a contractor.
+
+Q. When the client application is started should it ask for the database location every time? If we are persisting the database location the first time then can't we just use this value until the user decides to change it?
+A. From a usability point of view it would probably be nicer to not have to select this every time, but I have chosen to pre populate the text fields with the previous database file in order to speed this process up. The dialog box will still appear each time the application is launched which will allow the user to change if necessary.
+
+Q. When a change happens on the server i.e. a subcontractor record changes, how do I reflect this on the GUI in real time for all connected clients?
+A. I decided to use the fireTableDataChanged method from the AbstractTableModel class whenever I update the table model. When I create the table view in the main application I use the tableView.setModel method and pass in the table model which sets up a listener for any changes on this model.
+
+Q. Data file format question - Start of the db file contains 3 items, the magic cookie, the "offset to start of record zero", and the numbers of field in each record
+What is the purpose of the magic cookie? What do I do with this? What is the offset for?
+A. After reading online I found that the magic cookie is simply used to identify that the file is a valid db. So I am doing a check for this when reading the database initially. The offset value was actually vital for me as it allowed me to "seek" directly to where the record values are stored, I used this when bulk writing my cache contents back to disk.  
+
+Q. The DBMain interface does not provide any functionality for saving records back to the database
+A. Because I decided to use a cache to store record objects and operate directly on these, I needed a way of saving these back to disk. To work around this limitation I created an interface that extends the DBMain interface, calling this IDatabase, which I then implemented in the Data class. I made sure to research this implementation online before commiting to it as I was unsure if it would break the rule Data.java must implement DBmain.java, but because IDatabase extends DBmain this requirement is met. I also contemplated making DBMain extend IDatabase and directly implementing DBMain but I decided not to modify DBMain in the end.
+
+Q. The subcontractor records do not have a primary key, how can i make these unique? How would one check for duplicate record numbers
+A. I created a composite key using the hash code of a subcontractor's combined name and location values, this is then used as the record number. I made this a positive number.
+
+Q. What should happen if i run client mode before server mode? 
+A. The client will fail to connect and an connection refused exception message will appear because the remote host is not available
+
+Q. The following requirement confuses me: "[..] user interface should be designed with the expectation of future functionality enhancements" because in the instructions we are also told that the application will not be a long term project, and will ultimately be migrated to a web application. 
+A. The Java Swing API is purely used for desktop applications and therefore the implementation of this should have little consequences for the future web application. I have taken this requirement to mean the gneneral UI layout is important and should be relatively easily to modify/extend. For the purpose of extending the swing application I have chosen to use flexible layout managers such as GridBagLayout and BorderLayouts for this purpose. This should ease the introduction of new UI components.
+
+Q. If one client books a record, should the other clients be notified or view the update appear on the table in real time? 
+This would either require some sort of table refresh or a shared table model across clients, whereas i have implmeneted it in a way that each client window has its own table model, which all use the same business service/data store. So no, i have not decided to implement any push notifications of the sort or timed refresh, the table model will be updated whenever it is refreshed for example if the user does a search or tries to book a record.
+
+
+===================================================
+Design and Architectural choices
+===================================================
+
+I used a thin client approach where the client only contains presentation code and the business service on the server side takes client requestes over the network.
+The advantage to using a thin client is that all transactions are done atomocally on the server side which guarantees more control for example in the event that a client connection dies in the middle of a transaction. 
+
+From a design point of view there are a few design patterns that can be used for this type of application. One of the requirements mentioned is to choose an architectural pattern that is simple and easy to maintain for future enhancements. The patterns I used are quite straight-forward and include those such as Singleton, Facade, and MVC. These are explained in detail below.
+
+
+Traditional Multi Layered Design
+--------------------------------
+I used a multi layered design approach for organising the main parts of the application. 
+
+The 3 different layers are:
+Presentation / Business / Persistence
+
+This promotes a simple and modular design, and a separation of concerns in each layer. This also makes maintenance a lot easier. 
+Using a layered approache also makes the application more scalable because If a layer needs to change implementation say for example a change in choice of database, there should be minimal impact on other layers.
+There is a flow of control from one layer to the next, for example the presentation layer cannot interact with the persistence layer, it must go through the bussiness layer.
+
+The presentation layer contains all the code for the standalone, client, and server main GUI, as well as the configuration dialog windows. Action listeners are also included here which essentially act as controllers. This layer communicates to the business layer depending on the type of mode that is being run.
+
+The business layer contains code for the business logic mentioned above i.e. search and book. It exposes both a local and remote service which the presentation layer can use. This layer interacts with the persistence layer.
+
+The persistence layer contains all code related to the database and locking as defined in the the DBMain.java interface. It is responsible for reading/writing the database file and returning subcontractor records to the business layer.
+
+
+MVC (Model View Controller)
+---------------------------
+I used elements of the MVC pattern when designing how the presentation layer would work, that is to say that it is applied directly in the presentation layer and not outside of it. MVC in the large scale essentially separates the concerns of different components, so for example the presentation layer would be the view, the server would be the controller recieveing requests from the view and acting on the persistence layer (taking this to be the model), and updating the view accordingly.
+I did not apply MVC across the whole application but used it inside the presentation layer itself. For example, I used a table model class to store subcontractor records after having requested them from the business layer. This table model sits on the client but is now essentially the model if you will. The UI components are all of course the view, and the action listeners act as the controllers. When a controller recieves a request such as search, or book, it issues this request to the business layer which returns data to the controller, the controller then updates the table model, which in turn updates the view. Notice how the model and controller sit on the front end of the application, rather than on the server side which would be traditional of web based applications, so this is a slight variant of MVC.
+
+
+Dependency Injection
+--------------------
+I used this pattern when injecting the correct business component into the main application GUI. This is done based on whichever mode the application is started with.
+When the OK button is clicked in the configiuration dialog, a method is called to get the business service based on that type of dialog. This business service is then passed into the constructor of the main applicaiton window, which constitutes constructor dependency injection.
+
+
+Facade/Delegate Pattern
+-----------------------
+The DBMain interface that was provided to us involves functionality for both data management and record locking. In order to simplify the implementation of this I created two individual classes to handle each one. The Data.java implementation still exposes functionality for all of this to clients but within the class it is actually delagating this work off to these helper classes. The two helper classes are named LockManager and DBFileAccess respecively.
+One of the explicit design requirements was to use "A clear design, such as will be readily understood by junior programmers, will be preferred to a complex one, even if the complex one is a little more efficient". I feel that the patterns above are not overly complex and quite standard in today's field therefore i feel i have met this requirement.
+
+
+Singleton
+---------------------
+I used the singleton design pattern to implement my in-memory cache. This cache is used to store all subcontractor records read in from the database file. Because multiple clients are all sharing the same data store i decided to make this singleton i.e. It can only be instaniated once, where all operations act on this single cache instance. If there are more than one cache instance then we lose all data integrity.
+The cache object is created in the initialization of the Data class, which will then populate this cache with all records from the database file. Every subsequent Data class that is created will then use this cache object.
+
+DTO
+--------------
+I used a domain transfer object to carry subcontractor record data between the 3 different layers. The DBmain interface specifies that the subcontractor records are made up as string arrays, which are quite cumbersome and prone to error to use in different parts of the application. I worked around this by introducing a class called SubcontractorRecord which essentailly contains all of this data encapsulated in an object. It also provides some important methods such as getting the record number, or testing if certain fields match certain records etc. The point of the DTO is to simplify operations on a record via getters/setters as well as the transfer of these records both locally and remotely between the presentation and business layer.
+
+
+====================================
+Persistence Layer
+====================================
+
+Limitations & Resolutions
+-------------------------
+- DBMain has no save functionality. 
+	(Created new interface with this method and extended DBMain. The data class then implements this newinterface.)
+- Lock/unlock functionality adds to the complexity of the DBMain class, should just be CRUD.
+	(Delegated locking to a separate LockManager class)
+- Interaction with the DB is done using ints and string arrays, very primitive.. difficut for business layer to interact with, need to use a data object.
+	(Used SubcontractorRecord object to simplify this)
+- No record numbers/Primary key
+	(Created custom record number based on name/location fields)
+
+
+Design
+-------------------------
+The biggest design decision I made in this area was deciding to use a record cache rather than reading/writing to the database file for every operation.
+The reason for this is becasue each read/write to the database file on disk involves an I/O write and as the application grows this could impact performance. 
+With regard to database size writing the file contents to memory shouldnt be an issue given the current size of the databse, and given the requirements there doesn't seem to be any mention of how big the data records might become in the future.
+The cache implementation also greatly simplifies writing back to disk as we don't need to keep a record of where everything is in the file, we can just write the whole cache back to disk starting at record zero (or offset to record zero) as a bulk operation. It also allows us to convert the records to subcontractor objects and add these to the cache, which can be easily modified throughout the application lifecycle.
+The cache is populated once at startup i.e. The first time the Data class is initialized. The cache is saved back to disk when the application terminates, both normally and abnormally. Each remote client that connects to the server will also issue a save every time they close their window so there are regular writes happening. I thought about adding in a timer to save cache back to disk every X amount of minutes but I thought this might be overkill for the current size of the application, this could always be added in the future. 
+I used a hashmap for implementing the cache which maps record numbers to actual subcontractor record objects i.e. Mapp<Integer, SubcontractorRecord>
+All methods in the cache synchonize on this hashmap before modifying it. 
+
+I used one class, DBFileAccess, to manage reading and writing to the database file, all methods in this class are static. I stored all the information regarding the database schema in a seprate constants class. All records are read from the database file, their fields converted from bytes to strings, and are converted to subcontractor record objects. I used a RandomAccessFile object for accessing the file as this provides a useful seek method which can set the file pointer to an exact position in the file. The read method is called from the cache class when populating the cache. Inversely when the application terminates the save method is invoked in the Data class which triggers a write in the DBFileAccess class. This write involves getting the cache contents and converting all the subcontractor record objects to individual string builder objects and writing these (in bytes) back to the file. The reason for using string builder was to maintain the length of each data file according to the schema.
+
+Exception Handling - I created a generic DatabaseException class as the base class for all exceptions in the persistence layer (db package). The exceptions that can be thrown in the DBMain interface such as RecordNotFoundException etc. all extend this class. 
+
+As mentioned above the Data class acts as a facade with regard to database interaction and lock management, these tasks are actually delegated out to separate classes such as the DBFileAccess class which was just mentioned and the LockManager class.
+
+The LockManager class uses a concurrent hash map (thread safe) to map record numbers with an instance of the Data class (i.e. the client thread) which is currently locking or unlocking the record. This way a record number can be locked by a client so that no other clients can update it at the same time i.e. for multiple concurrent bookings. It is the responsibility of the business service who is calling the update method in the Data class to first call lock beforehand, i.e. lock, update, unlock. It is only in this manner that we can guarantee data integrity. The hashmap of locked records is static which means only one of these ever exists as it is a class variable.
+
+The lock/unlock methods are static and rather than making them synchronized I used a simple Reentrant lock within the method which must be obtained by the thread wishing to lock or unlock a record, this guarantees only one thread can lock or unlock (i.e. add or remove a record number to/from the hashmap of locked records) at any given time.
+
+I used a Condition object to enfore threads to wait and "give up CPU time" if they try to lock a record that is already locked. This also supports sending a signal to wake up any thread that is waiting.
+
+Because there is no record number or primary key for each record in the database file i created the record number on the fly when creating the subcontractor object. This record number is the hash code value of the name and location fields combined.
+I figure the chances of a subcontractor having the same name and location is rare and given the small scale of this application it should be fine
+
+It is also worth nothing regarding the valid byte field i am not reading these records into the cache. If a subcontractor record does not have a valid byte field it is ignored. This means that when the cache is written to disk that record will be deleted. In my opinion there is no reason to store an invalid record in the db file so I went ahead and did this. While i did not implement the delete functionality in DBMain this could easily just set the subcontractor record to invalid which would prevent it from being subsequently read into cache, and finally overwritten.
+
+
+===================================================
+Business Layer
+===================================================
+
+Main business requirements:
+- Allow the user to choose location of database for both standalone mode and server mode 
+- Allow the user to view all records from the database
+- Allow the user to search the database records with specific criteria
+- Allow the user to make a booking
+
+Design
+-------------------------
+All business functionality (search/book) is defined in the SubcontractorService interface. This interface is implemented by DefaultSubcontractorService which then interacts with the Data class i.e. the persistence layer. With regard to locking this class is responsible for calling the methods in Data correctly i.e. The book method is responsible for locking a record before calling the update method in Data, and then calling unlock on that record. Subcontractor record objects are the objects that are being used at this level.
+
+Similar to the persistence layer, an exception hierachy exists and is essentially an abstraction of the exceptions in the other layer. The parent class being ServicesException, and subclasses extending this such as SubcontractorAlreadyBooked etc. If a recordNotFound exception is thrown at the persistence layer it is caught and a subcontractorRecordNotFound is thrown in the business layer. I choose to implement this kind of exception abstraction between the layers to provide better mroe clarity and context to the end user.
+
+The search method uses the find method in the Data class, which I've actually decided to use to return all subcontractor records from persistence. I am doing this by searching with a list of criteria containing null values, as the instuctions specify a null value will match anything.
+
+Because the find method in DBMain interface returns partial matches, i had to do some extra filtering at this level to remove the partial matches as the user requirement states exact matches for name and/or location.
+
+For client/server (remote) mode, i have defined an interface named RemoteSubcontractorService which extends java.rmi.Remote as well as extending the main business interface SubcontractorService. The reason for this is because the remote implementation contains all this same functionality except for one extra method, starting the server. The implementation of this remote interface is named RMIRemoteSubcontractorService which i've also made to extend DefaultSubcontractorService so that it can avail of the already implemented search and book methods etc. The only method that is implemented in this class is startServer() which simply exports itself to the RMI registry binding on the specific port that was passed in by the user and using a specific server name. This allows remote clients to obtain an RMI "stub" of this server object, which is essentially a DefaultSubcontractorService class containing all the main business methods. When the application is run in server mode this RMIRemoteSubcontractorService object is created and essentially acts as "the server". Each client that connects then queries the rmi registry using the LocateRegistry method to get a reference to the registry and then calls registry.lookup passing in the server name that was used when starting the server.
+
+I found that the above implementation greatly reduced the amount of potential duplication for the remote implementation. Its also worth mentioning that because the remote implemetnation, i.e. DefaultSubcontractorService being exported as a remote stub, the common SubcontractorService interface needs to throw RemoteException in all its throw clauses. This does not mean that the DefaultSubcontractorService needs to throw this exception when running in local mode, but that its possible when it is being used in a remote context.
+
+The DefaultSubcontractorService takes an instance of IDatabase (the interface that extends DBMain) in its constructor. This constitiues constructor dependency and removes the dependence on the business service to instantitate the database instance itself.
+
+
+===================================================
+Presentation Layer
+===================================================
+
+I used polymorphism quite heavily in this layer which I think helped remove a lot of duplication and simplify supprt for all the different modes of operation.
+
+When the main application is launched from the command line, the mode argument is used to decide which configuration dialog GUI is launched, each dialog requiring different information. Because each of these dialogs share similar functionality i.e. enter text, get text, click browse, show error message, add action listeners, load/save configuration properties etc. I decided to create a single Config interface and then create individual interfaces for each one (client, standalone, and server). Each individual interface is more specific with regard to which type of config is needed.
+Each of the actual config GUI implementations extend JFrame and use standard Swing components to show/get the data i.e. JTextFields, JLabels, JButtons etc.
+
+When the user has entered the configuration for a particuar dialog and presses OK, either the main application windows starts (for client/alone mode) or a smaller server window is opened. Because we know which mode we are running in based on the type of config dialog we know which window to launch. The ok button is therefore the main launch point of our application as it decides which business component the presentation layer will interact with, whether it is the default class or whether it needs to be retrieved from the RMI registry, or whether we need to actually start the RMI server. 
+The main window itself must recieve this business component when being created as it must have a reference to it in order to call whatever methods are necessary. Again this constitues constructor dependency as we are passing the relevant business object into the main window at run time. This actually means that that main window does not need to know whether we are running locally or remote, he is not responsible for this, he simply recieves a busines object and uses it.
+
+Again i have used polymorphism as mentioned above to group the different OK button listeners together, one for client, one for server, one for standalone, as they all share common functionaltiy yet are impemented differently. I have created an abstrac class called OkButtonListener which partly implements what happens when ok is clicked but also defines some abstract methods which must be implemented by each of the other listener modes. For example when ok is clicked this will get the relevant business service that is needed, each listener implementation is responsible for returning this based on the mode. The config properties are then saved and the window closed, the main window is then created passing in the relevant business service.
+This is sort of like using a factory pattern to return the correct business service at runtime based on what type of ok button listener was clicked.
+
+Regarding the configuration dialogs and properties I used a standard File object to create the suncertify.properties file and the Properties class to store the key value pairs in memory before reading/writing. I delegated all of this off to a configurationProperties file which is responsible for this. I considered using a resource bundle to deal with different locales but i decided this could always be added in the future if necessary as it is not a direct requirement. Also the number of properteis is quite small so its ok to hardcode them in this class for now.
+
+Unlike the other layers i used one exception class named StartException for wrapping any exceptions thrown from the business layer. This can get thrown in either of the OK button listeners when launching the application.
+
+Regarding layouts i used a gridbag layout for the configuration property dialogs, this is very flexible and allows the UI components to be placed in a cell like structure. For the main application window itself (which is a JFrame) it uses panels to store the different areas such as the panel containing the JTable with all the records, another panel to contain the search textfields and button, and another panel for the book button. I used a JTable for the tabel view, and added this to a JScrollPane to allow the user to scroll through the records in the view. I used an abstract table model to hold the current data in the view at any given time. The action listeners for the search/book buttons who are essentially the controllers then update this model with the data returned from the business service. The view listens to this model and any changes are reflected in the GUI.
+
+I did not add any file menu options to the main window as i wanted to keep it as simple as possible and only provide funcionality that was needed within the scope of this project. 
+
+===================================================
+RMI over Sockets
+===================================================
+
+I chose to use RMI over sockets for the following reasons:
+- Easier and simpler approach, reduces complexity by means of abstraction - hides a lot of the network specific code, handling of byte streams and protocol information etc.
+- RMI promotes a clean and simple implementation. More maintainable, robust and flexible.
+- RMI decouples the client and server objects, allowing minimal impacts to the client if anything is changed on the server. i.e. Having to recompile the server code for whatever reason will not affect the client. For this particular project it is assumed that functionality will later be added to the client GUI, using RMI in this case facilitates the standalone development of this. 
+- Built in thread safety, with sockets multi-threading needs to be done manually
+Using sockets one needs to write code to handle the actual formatting of the messages passing betewen client/server
+
+Disadvantages of RMI compared to sockets are mostly performant based but this application does need to worry about this level of extreme performance.

@@ -1,0 +1,118 @@
+Bodgitt & Scarper, LLC. User Guide
+
+1. Introduction/Summary
+--------------------
+The purpose of this user guide is to introduce the new version of Bodgitt & Scarper's home improvement contractor booking service.
+A recent decision was made by the company to migrate their existing application to a Java technology based system before migrating the system to the web in the long term.
+For now the system is designed to be used by Customer Service Representatives (CSRs) and therefore they are the main target audience for this user guide.
+
+
+2. Application Overview 
+--------------------
+The application is essentially a booking service which allows a CSR to search for and book subcontractors on behalf of a customer. 
+The application is graphical based, and allows the CSR to view, search and book a subcontractor based on name, location, or both, all in the one main window.
+It is a client-server based system supporting multiple client connections using the application at the same time.
+It uses a simple flat file based database to store and display subcontractor records to the user.
+The application has 3 main modes, one to start the server, another to connect as a networked client to this server, and the third to run the application in standalone mode connecting directly to the database file locally. The default mode is client mode.
+The application is distributed as a JAR file (Java Archive) and details for how to run are explained further below. 
+Regardless of whichever mode is selected, when the user runs the application they will be prompted to enter important configuration information such as the path to the database file, or the connection details for the server. Initially these will be blank and after first running the application these will be saved to configuration file. These properties will then be loaded on subsequent runs and the configuration dialogs will be populated so that the user does not have to enter these every time.
+
+
+3. Application Requirements
+------------------------
+Java: Requires JRE version 1.7 or greater installed.
+GUI: Requires the machine that is launching the application in client/standalone mode should have a display to interact with the application.
+Networking: Requires a network with available ports for running in client/server mode on distributed machines. 
+Database: Requires the database file "db-2x1.db" must be available on the server system when running in server mode. This can be renamed of course and is specified in the configuration dialog when launching the application.
+Client: Requires the server to be up and running before launching.
+
+
+4. How to Run the Application
+--------------------------
+This was already mentioned but it's worth highlighting again that there are 3 main modes for running the application:
+
+Standalone (Non Networked)
+Client (Networked)
+Server (Networked)
+
+The mode is selected when running the JAR file from the command line. 
+The name of the jar file is runme.jar
+The mode flag must be either "server", indicating the server program must run, "alone", indicating standalone mode, or left out entirely, in which case the network client will run.
+
+To run the application use the following command syntax from the directory where the runme.jar is located:
+java -jar runme.jar <mode>
+
+
+4.1 Running in Standalone Mode
+--------------------------
+This is non-networked mode; the application connects directly to the database locally and allows the user to interact with it via the standard GUI.
+
+Command to run:
+java -jar runme.jar alone
+
+When you run this command a configuration dialog will open which will require the following properties:
+- Database path
+
+To select the database file click the browse button, this will open up a window to select the database file that was supplied with this assignment, when you have selected the file click ok.
+You will now be returned to the configuration dialog window where you can either press OK to start the application, or press Cancel to exit. You can also close the dialog by pressing the "X" icon in the top right hand corner. 
+
+
+4.2 Running in Server Mode
+----------------------
+This will run the application server on your machine as localhost on a specific port, allowing other machines to connect as remote clients. This must be done before clients can connect.
+The server connects to the local database file and recieves remote requests which are then processed locally returning the results over the network.
+
+Command to run:
+java -jar runme.jar server
+
+When you run this command a configuration dialog will open which will require the following properties:
+- Database path
+- Server port
+
+To select the database file click the browse button, this will open up a window to select the database file that was supplied with this assignment, when you have selected the file click ok.
+You will now be returned to the configuration dialog window where you must select the port which the server will receive remote requests on. Please enter a valid port that is not currently being used.
+You can now press OK to start the application server, or press Cancel to exit. You can also close the dialog by pressing the "X" icon in the top right hand corner. 
+
+If the server starts successfully a small window should open up with a message saying which port it is listening on.
+To stop the server you can either press the stop button, or press the "X" icon in the top right hand corner.
+
+
+4.3 Running in Client Mode
+-----------------------
+This will connect as a client to the application server host on a specified port. 
+It is expected as a pre-requisite that the server host is up and running beforehand and that the host information is known (Hostname/IP and Port).
+
+java -jar runme.jar
+
+When you run this command a configuration dialog will open which will require the following properties:
+- Server hostname or IP
+- Server port
+
+The server hostname or IP should be wherever the server is running, for example if you are running the client on the same machine as the server you can enter "localhost" otherwise if you are on a remote machine you must enter the IP address or hostname of the machine in which the server is running.
+The server port must be the port in which the server is listening on.
+
+When you have finished entering the values above you can now press OK to start the application server, or press Cancel to exit. You can also close the dialog by pressing the "X" icon in the top right hand corner. 
+
+
+5. How to use the Application GUI in Client/Standalone mode
+----------------------------------------------------
+The same GUI is used whether you use the application in client or standalone mode. This GUI presents the list of subcontractors that are available in the database file in a readable manner, each with a unique record number that is displayed in the first column. The GUI is made up of a large table area that contains a scroll bar to browse and select a record, along with panels below for searching and booking a subcontractor. The application can be exited at any time by pressing the "X" icon in the top right hand corner.
+
+
+5.1 How to search for a record
+--------------------------
+The search function allows the user to search for all records or for records where the name and/or location fields exactly match values specified. They are case sensitive.
+
+To search for a user by name, enter the name into the name textbox and click search.
+To search for a user by location, enter the location into the location textbox and click search.
+To search for a user by name and location, enter the name into the name textbox and the location into the location textbox and click search.
+
+If a record match is found the table view will be refreshed with the resulting records, otherwise a pop up will indicate no records were found and the full list of records will be presented again.
+
+
+5.2 How to Book a record
+--------------------------
+The book function allows the user to book a selected record with a customer ID, updating the database file accordingly.
+
+To book a subcontractor record select the row from the table that you wish to book making sure that the record is not already booked. You can check if a record is already booked by looking in the customer ID field, if this is empty then the subcontractor is not booked. If you attempt to book a subcontractor that is booked the application will inform you in either case. 
+Having selected the row you can now press the book button where a dialog box will pop up requiring you to enter a valid customer ID. This entry is validated upon clicking OK and will not allow you to enter an ID that is not 8 digits of length. You can click cancel at any time during this process to exit this dialog and cancel the booking procedure.

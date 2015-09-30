@@ -17,11 +17,10 @@ package suncertify.tests;
 
 import java.util.Random;
 
-import suncertify.db.Data;
-import suncertify.db.RecordNotFoundException;
+import suncertify.db.*;
 
 public class TestDataClassThreading {
-    private final static String FILE_PATH_COPY = "C:\\Users\\ekieobr\\workspace_java_masters\\JavaMasterProject\\db-2x2-new.db";
+    private final static String FILE_PATH_COPY = "C:\\Users\\ekieobr\\workspace_java_masters\\JavaMasterProject\\db-2x2.db";
     private static Data data;
 
     /*
@@ -42,15 +41,15 @@ public class TestDataClassThreading {
 	}
     }
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws DatabaseException {
 	new TestDataClassThreading().startTests();
     }
 
     public static int getRandomRecord() throws RecordNotFoundException {
 	// find everything
-	final String[] criteria = new String[] { "", "", "", "", "", "" };
+	final String[] criteria = new String[] { null, null, null, null, null,
+		null, null };
 	final int[] recordNumbers = data.find(criteria);
-
 	final Random r = new Random();
 	final int Low = 1;
 	final int High = 20;
@@ -74,18 +73,18 @@ public class TestDataClassThreading {
 	     * time, but if you want, you can increase the controller variable,
 	     * so it is executed as many times as you want
 	     */
-	    for (int i = 0; i < 10; i++) {
-		final Thread updatingRandom = new UpdatingRandomRecordThread();
+	    for (int i = 0; i < 27; i++) {
+		final Thread updatingRandom = new BookRandomRecordThread();
 		updatingRandom.start();
-		final Thread updatingRecord1 = new UpdatingRecord1Thread();
+		final Thread updatingRecord1 = new BookRecord1Thread();
 		updatingRecord1.start();
 
 		// final Thread creatingRecord = new CreatingRecordThread();
 		// creatingRecord.start();
 		// final Thread deletingRecord = new DeletingRecord1Thread();
 		// deletingRecord.start();
-		// final Thread findingRecords = new FindingRecordsThread();
-		// findingRecords.start();
+		final Thread findingRecords = new FindingRecordsThread();
+		findingRecords.start();
 	    }
 	} catch (final Exception e) {
 	    System.out.println(e.getMessage());
@@ -93,7 +92,7 @@ public class TestDataClassThreading {
 
     }
 
-    private class UpdatingRandomRecordThread extends Thread {
+    private class BookRandomRecordThread extends Thread {
 
 	@Override
 	public void run() {
@@ -132,6 +131,7 @@ public class TestDataClassThreading {
 		System.out.println(Thread.currentThread().getId()
 			+ " trying to update record #" + recNo
 			+ " on UpdatingRandomRecordThread");
+
 		final String[] subcontractor_fields = data.read(recNo);
 
 		System.out.println(Thread.currentThread().getId()
@@ -151,7 +151,7 @@ public class TestDataClassThreading {
 
 		// final String[] new_record_fields = new String[] { "Palace",
 		// "Smallville", "Drywall, Roofing", "2", "$150.00", null };
-		subcontractor_fields[5] = "123456789";
+		subcontractor_fields[6] = "123456789";
 		data.update(recNo, subcontractor_fields);
 
 		System.out.println(Thread.currentThread().getId()
@@ -159,15 +159,14 @@ public class TestDataClassThreading {
 			+ " on UpdatingRandomRecordThread");
 
 		data.unlock(recNo);
-
+		data.saveData();
 	    } catch (final Exception e) {
-
 		System.out.println(e);
 	    }
 	}
     }
 
-    private class UpdatingRecord1Thread extends Thread {
+    private class BookRecord1Thread extends Thread {
 
 	@Override
 	public void run() {
@@ -184,7 +183,7 @@ public class TestDataClassThreading {
 			+ " trying to read record " + recNo + " on"
 			+ " UpdatingRecord1Thread");
 		final String[] subcontractor_fields = data.read(recNo);
-		subcontractor_fields[5] = "9128512";
+		subcontractor_fields[6] = "9128512";
 
 		System.out.println(Thread.currentThread().getId()
 			+ " trying to update record " + recNo + " on"
@@ -205,6 +204,7 @@ public class TestDataClassThreading {
 	    }
 	}
     }
+
     //
     // private class CreatingRecordThread extends Thread {
     //
@@ -252,45 +252,53 @@ public class TestDataClassThreading {
     // }
     // }
     //
-    // private class FindingRecordsThread extends Thread {
-    //
-    // @Override
-    // public void run() {
-    // try {
-    // System.out.println(Thread.currentThread().getId()
-    // + " trying to find records");
-    // final String[] criteria = { "Palace", "Smallville", null, null,
-    // null, null, null };
-    // final int[] results = data.find(criteria);
-    //
-    // for (int i = 0; i < results.length; i++) {
-    // System.out.println(results.length + " results found.");
-    // try {
-    // final String message = Thread.currentThread().getId()
-    // + " going to read record #" + results[i]
-    // + " in FindingRecordsThread - still "
-    // + ((results.length - 1) - i) + " to go.";
-    // System.out.println(message);
-    // final String[] room = data.read(results[i]);
-    // System.out.println("Hotel (FindingRecordsThread): "
-    // + room[0]);
-    // System.out.println("Has next? "
-    // + (i < (results.length - 1)));
-    // } catch (final Exception e) {
-    // /*
-    // * In case a record was found during the execution of
-    // * the find method, but deleted before the execution of
-    // * the read instruction, a RecordNotFoundException will
-    // * occur, which would be normal then
-    // */
-    // System.out.println("Exception in "
-    // + "FindingRecordsThread - " + e);
-    // }
-    // }
-    // System.out.println("Exiting for loop");
-    // } catch (final Exception e) {
-    // System.out.println(e);
-    // }
-    // }
-    // }
+    private class FindingRecordsThread extends Thread {
+
+	@Override
+	public void run() {
+	    try {
+		System.out.println(Thread.currentThread().getId()
+			+ " trying to find records");
+		final String[] criteria = { null, "Palace", "Smallville", null,
+			null, null, null, };
+
+		final int[] results = data.find(criteria);
+
+		for (int i = 0; i < results.length; i++) {
+		    System.out.println(results.length + " results found.");
+		    try {
+			final String message = Thread.currentThread().getId()
+				+ " going to read record #" + results[i]
+				+ " in FindingRecordsThread - still "
+				+ ((results.length - 1) - i) + " to go.";
+			System.out.println(message);
+
+			data.lock(results[i]);
+
+			final String[] room = data.read(results[i]);
+
+			System.out
+				.println("Contractor Name (FindingRecordsThread): "
+					+ room[1]);
+			System.out.println("Has next? "
+				+ (i < (results.length - 1)));
+		    } catch (final Exception e) {
+			/*
+			 * In case a record was found during the execution of
+			 * the find method, but deleted before the execution of
+			 * the read instruction, a RecordNotFoundException will
+			 * occur, which would be normal then
+			 */
+			System.out.println("Exception in "
+				+ "FindingRecordsThread - " + e);
+		    } finally {
+			data.unlock(results[i]);
+		    }
+		}
+		System.out.println("Exiting for loop");
+	    } catch (final Exception e) {
+		System.out.println(e);
+	    }
+	}
+    }
 }

@@ -18,7 +18,7 @@ import suncertify.business.*;
 import suncertify.db.*;
 
 public class TestBusinessServiceBooking {
-    private final static String DB_PATH = "C:\\Users\\ekieobr\\workspace_java_masters\\JavaMasterProject\\db-2x2-copy.db";
+    private final static String DB_PATH = "C:\\Users\\ekieobr\\workspace_java_masters\\JavaMasterProject\\db-2x2.db";
     private static int[] recordNumbers;
 
     public static void main(final String[] args) throws DatabaseException {
@@ -34,7 +34,8 @@ public class TestBusinessServiceBooking {
     static int[] getAllRecordNumbers() throws DatabaseException {
 	final IDatabase databaseImpl = new Data(DB_PATH);
 
-	final String[] criteria = new String[] { "", "", "", "", "", "" };
+	final String[] criteria = new String[] { null, null, null, null, null,
+		null, null };
 	final int[] recordNumbers = databaseImpl.find(criteria);
 	return recordNumbers;
 
@@ -43,16 +44,16 @@ public class TestBusinessServiceBooking {
     static int getRandomRecordNumber() throws RecordNotFoundException {
 	final Random r = new Random();
 	final int Low = 1;
-	final int High = 20;
-	final int R = r.nextInt(High - Low) + Low;
-	return recordNumbers[R];
+	final int High = 28;
+	final int i = r.nextInt(High - Low);
+	return recordNumbers[i];
     }
 
     public void startBookerThreads() {
 	final List<Thread> threads = new ArrayList<Thread>();
 	try {
 	    // create book-threads
-	    for (int i = 0; i < 35; i++) {
+	    for (int i = 0; i < 100; i++) {
 		threads.add(new Thread(new BookThread(i * 100), String
 			.valueOf(i * 100)));
 	    }
@@ -99,6 +100,7 @@ public class TestBusinessServiceBooking {
 			    databaseImpl);
 		    service.bookSubcontractor(recNo, customerID);
 		    endRun = true;
+		    service.saveData();
 		} catch (final RemoteException e) {
 		    System.out.println(e);
 		} catch (final SubcontractorNotFoundException e) {
@@ -110,9 +112,10 @@ public class TestBusinessServiceBooking {
 		} catch (final DatabaseException e) {
 		    System.out.println(e);
 		    noRoom = true;
+		} catch (final ServicesException e) {
+		    e.printStackTrace();
 		} finally {
 		    endRun = true;
-
 		}
 
 	    }
