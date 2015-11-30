@@ -14,7 +14,8 @@ package suncertify.tests;
 import java.rmi.RemoteException;
 import java.util.List;
 
-import suncertify.business.*;
+import suncertify.business.DefaultSubcontractorService;
+import suncertify.business.SubcontractorService;
 import suncertify.db.*;
 
 public class TestBusinessServiceGetAll {
@@ -36,11 +37,7 @@ public class TestBusinessServiceGetAll {
 	} catch (final RemoteException e) {
 	    // TODO Auto-generated catch block
 	    e.printStackTrace();
-	} catch (final SubcontractorNotFoundException e) {
-	    // TODO Auto-generated catch block
-	    e.printStackTrace();
 	}
-
     }
 
     /**

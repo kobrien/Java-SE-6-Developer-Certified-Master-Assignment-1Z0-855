@@ -107,8 +107,8 @@ public class DefaultSubcontractorService implements SubcontractorService {
 		    subcontractorsToReturn.add(this
 			    .getSubcontractor(recordNumber));
 		} catch (final SubcontractorNotFoundException e) {
-		    // again, we just want to swallow these and return an empty
-		    // list to the presentation layer
+		    // We just want to swallow this exception and return an
+		    // empty list to the presentation layer
 		}
 	    }
 	}

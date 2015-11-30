@@ -201,7 +201,7 @@ public class Data implements IDatabase {
      *
      * @param recNo
      *            The record number to unlock for this client
-     * @throw RecordNotFoundException
+     * @throws RecordNotFoundException
      */
     @Override
     public void unlock(final int recNo) throws RecordNotFoundException {

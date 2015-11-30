@@ -65,10 +65,6 @@ public class SubcontractorRecord implements Serializable {
      *            The list of work available from this subcontractor
      * @param size
      *            The number of workers available for this subcontractor
-     * @param specialties
-     *            The different types of work performed by this subcontractor
-     * @param employeeSize
-     *            The number of staff available for this subcontractor
      * @param rate
      *            The charge per hour for this subcontractor
      * @param ownerID

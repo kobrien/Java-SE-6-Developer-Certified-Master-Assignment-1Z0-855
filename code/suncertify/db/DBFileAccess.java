@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  * {@code DBFileAccess} is responsible for reading and writing records to the
  * database file. It is instantiated and should only be used by the {@code Data}
  * class. All records are read and converted to {@code Subcontractor} objects
- * and then returned to the {@Data} class to be loaded into cache at
+ * and then returned to the {@code Data} class to be loaded into cache at
  * startup. Likewise this class is capable of taking a subcontractor object and
  * writing it to disk. This class uses a hashmap to maintain a mapping of record
  * numbers to their location in the database file. Using a RandomAccessFile this
@@ -22,12 +22,17 @@ public class DBFileAccess {
     private final static Logger LOGGER = Logger.getLogger(DBFileAccess.class
 	    .getName());
 
-    private static int MAGIC_COOKIE_VALUE;
+    // The unique value at the start of the database file which is used to prove
+    // the integrity of the file
+    private static int magicCookie;
 
-    private static int FIRST_RECORD_LOCATION_VALUE;
+    // The location to which the first record value can be found
+    private static int firstRecordLocationValue;
 
-    private static RandomAccessFile databaseFile = null;
+    // File object used to interact with the database file
+    private static RandomAccessFile databaseFile;
 
+    // Read and write access for the database file
     private static final String FILE_ACCESS_MODE = "rw";
 
     /**
@@ -47,7 +52,7 @@ public class DBFileAccess {
 	// Only initialize if the database file is null
 	if (databaseFile == null) {
 	    try {
-		LOGGER.info("initializing connection to database file "
+		LOGGER.info("Initializing connection to database file "
 			+ databasePath);
 
 		// Check if the database file actually exists
@@ -87,7 +92,7 @@ public class DBFileAccess {
     private static void verifyValidDatabase() throws DatabaseException {
 	LOGGER.info("Verifying database is valid based on magic cookie value");
 
-	if (MAGIC_COOKIE_VALUE != DatabaseConstants.EXPECTED_MAGIC_COOKIE_VALUE) {
+	if (magicCookie != DatabaseConstants.EXPECTED_MAGIC_COOKIE_VALUE) {
 	    throw new DatabaseException(
 		    "Database file is not a valid database - magic cookie values do not match");
 	}
@@ -112,7 +117,7 @@ public class DBFileAccess {
 	    // Starting at record location zero, Iterate over each record
 	    // creating subcontractor objects for each one until we reach the
 	    // end of the file
-	    for (long fileOffset = FIRST_RECORD_LOCATION_VALUE; fileOffset < databaseLength; fileOffset += totalRecordLength) {
+	    for (long fileOffset = firstRecordLocationValue; fileOffset < databaseLength; fileOffset += totalRecordLength) {
 		final SubcontractorRecord subcontractor = readSubcontractorRecord(fileOffset);
 
 		if (subcontractor != null) {
@@ -142,11 +147,11 @@ public class DBFileAccess {
 
 	    final byte[] magicCookieValue = new byte[DatabaseConstants.MAGIC_COOKIE_VALUE_BYTES];
 	    databaseFile.readFully(magicCookieValue);
-	    MAGIC_COOKIE_VALUE = getIntValueFromByteArray(magicCookieValue);
+	    magicCookie = getIntValueFromByteArray(magicCookieValue);
 
 	    final byte[] offsetStartRecordZero = new byte[DatabaseConstants.OFFSET_TO_START_RECORD_ZERO_VALUE_BYTES];
 	    databaseFile.readFully(offsetStartRecordZero);
-	    FIRST_RECORD_LOCATION_VALUE = getIntValueFromByteArray(offsetStartRecordZero);
+	    firstRecordLocationValue = getIntValueFromByteArray(offsetStartRecordZero);
 
 	} catch (final IOException e) {
 	    throw new DatabaseException(
@@ -214,7 +219,7 @@ public class DBFileAccess {
 
 	// Starting at record location zero, Iterate over each subcontractor
 	// object and only write the record back to disk if it is valid record
-	long fileOffset = FIRST_RECORD_LOCATION_VALUE;
+	long fileOffset = firstRecordLocationValue;
 
 	for (final SubcontractorRecord subcontractor : subcontractors) {
 	    if (subcontractor.isValidRecord()) {
@@ -281,7 +286,7 @@ public class DBFileAccess {
      * {@codeDatabaseConstants}
      *
      * @param recordValues
-     * @return
+     * @return SubcontractorRecord
      * @throws DatabaseException
      * @throws UnsupportedEncodingException
      */

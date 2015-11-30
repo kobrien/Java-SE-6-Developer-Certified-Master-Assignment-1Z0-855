@@ -110,7 +110,7 @@ public class ConfigurationPropertiesManager {
     /**
      * Sets the value for a named property
      *
-     * @param name
+     * @param propertyName
      *            The named property
      * @param value
      *            The value to set

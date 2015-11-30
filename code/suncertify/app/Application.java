@@ -25,7 +25,7 @@ import suncertify.ui.*;
  *
  */
 public class Application {
-
+    // Usage text to display to the user
     private static final String USAGE = "\nUSAGE: java -jar <filename> [mode]\n\n"
 	    + "where <filename> is the name of the jar\n"
 	    + "where [mode] is either one of the following parameters or left blank:\n"
@@ -44,9 +44,9 @@ public class Application {
 	final String applicationMode = processCommandLineArguments(args);
 
 	try {
-	    if (applicationMode == "server") {
+	    if (applicationMode.equals("server")) {
 		new ServerConfigDialogGUI();
-	    } else if (applicationMode == "alone") {
+	    } else if (applicationMode.equals("alone")) {
 		new StandaloneConfigDialogGUI();
 	    } else {
 		new ClientConfigDialogGUI();
